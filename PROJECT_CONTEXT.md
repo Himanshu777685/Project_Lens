@@ -398,9 +398,11 @@ Agents must not redesign unrelated parts of the application.
 
 ```text
 PHASE 0  — Project definition                COMPLETE
-PHASE 1  — Repository + project contract     CURRENT
-PHASE 2  — Database
-PHASE 3  — Backend API
+PHASE 1  — Repository + project contract     COMPLETE
+PHASE 2  — Database                          COMPLETE
+  PHASE 2A — Database architecture           COMPLETE
+  PHASE 2B — Mongoose model implementation   COMPLETE (verified)
+PHASE 3  — Backend API                       CURRENT
 PHASE 4  — Frontend foundation
 PHASE 5  — Communication Inbox
 PHASE 6  — Gemini integration
@@ -431,6 +433,61 @@ Development prioritizes the smallest complete end-to-end workflow.
 | Sept 12 | Testing, deployment, documentation, demo video, submission |
 
 **Feature creep must be avoided at all costs.**
+
+---
+
+## 17. PHASE 2B — DATABASE MODEL IMPLEMENTATION
+
+**Status: COMPLETE**
+
+### Implemented Mongoose models
+
+- `Project`
+- `Communication`
+- `AnalysisRun`
+- `Insight`
+
+### Implementation details
+
+- Built with TypeScript + Mongoose.
+- Four collections/models total, exactly as defined in Phase 2A — no additional collections were introduced.
+- `Insight` uses one unified schema representing all five intelligence types: decision, task, change, risk, conflict.
+- Type-specific `Insight` status validation is implemented (each type only accepts its own approved status values).
+- `sourceCommunicationIds` is required on every `Insight` and must contain at least one `Communication` ID, preserving the source-traceability principle from Section 5.
+- `dependsOnInsightIds` is supported on `Insight` for representing dependency relationships, without a separate Dependency collection.
+- ObjectId references are configured between related models (`Communication → Project`, `AnalysisRun → Project`/`Communication`, `Insight → Project`/`AnalysisRun`/`Communication`/`Insight`).
+- The approved database indexes from Phase 2A are implemented.
+
+### Verification
+
+- `server/scripts/verifyModels.ts` was added.
+- Model validation was tested in memory using Mongoose's `.validateSync()`, without requiring a live MongoDB connection. MongoDB connectivity itself was not tested as part of this verification.
+- **21 verification checks passed, 0 failed.**
+
+**Verification command:**
+
+```bash
+npm run verify:models
+```
+
+**Verification result:**
+
+```text
+21 passed, 0 failed
+```
+
+**Known warning (non-blocking):** the verification script currently produces a Mongoose deprecation warning because it uses `validateSync()`, which Mongoose has flagged for removal in a future major version in favor of the async `.validate()`. This is a warning tied to the verification script's approach, not a Phase 2B failure — it did not cause any verification check to fail.
+
+---
+
+## 18. CURRENT PROJECT STATE
+
+- Database architecture is **approved** (Phase 2A).
+- Mongoose model layer is **implemented** (Phase 2B).
+- Model verification is **passing** (21/21 checks, 0 failures).
+- The project is **ready to begin Phase 3A — Backend Foundation**.
+
+Phase 3A has not been started. Implementation planning for Phase 3A will follow in a separate step, per the governance rules in Section 13 and the safety rules in Section 14.
 
 ---
 
