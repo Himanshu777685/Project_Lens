@@ -2,6 +2,7 @@ import { Router } from "express";
 import healthRoutes from "./health.routes";
 import projectRoutes from "./project.routes";
 import { projectCommunicationsRouter, communicationRouter } from "./communication.routes";
+import { projectAnalysisRunsRouter, analysisRunRouter } from "./analysis.routes";
 
 /**
  * routes/index.ts
@@ -18,5 +19,9 @@ router.use("/health", healthRoutes);
 router.use("/projects", projectRoutes);
 router.use("/projects/:projectId/communications", projectCommunicationsRouter);
 router.use("/communications", communicationRouter);
+
+// AnalysisRun routes (Phase 3D)
+router.use("/projects/:projectId/analysis-runs", projectAnalysisRunsRouter);
+router.use("/analysis-runs", analysisRunRouter);
 
 export default router;
