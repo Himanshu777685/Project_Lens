@@ -1,5 +1,7 @@
 import { Router } from "express";
 import healthRoutes from "./health.routes";
+import projectRoutes from "./project.routes";
+import { projectCommunicationsRouter, communicationRouter } from "./communication.routes";
 
 /**
  * routes/index.ts
@@ -13,5 +15,8 @@ import healthRoutes from "./health.routes";
 const router = Router();
 
 router.use("/health", healthRoutes);
+router.use("/projects", projectRoutes);
+router.use("/projects/:projectId/communications", projectCommunicationsRouter);
+router.use("/communications", communicationRouter);
 
 export default router;
