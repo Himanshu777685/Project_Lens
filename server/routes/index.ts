@@ -3,6 +3,7 @@ import healthRoutes from "./health.routes";
 import projectRoutes from "./project.routes";
 import { projectCommunicationsRouter, communicationRouter } from "./communication.routes";
 import { projectAnalysisRunsRouter, analysisRunRouter } from "./analysis.routes";
+import { projectInsightsRouter, insightRouter } from "./insight.routes";
 
 /**
  * routes/index.ts
@@ -19,6 +20,8 @@ router.use("/health", healthRoutes);
 router.use("/projects", projectRoutes);
 router.use("/projects/:projectId/communications", projectCommunicationsRouter);
 router.use("/communications", communicationRouter);
+router.use("/projects/:projectId/insights", projectInsightsRouter);
+router.use("/insights", insightRouter);
 
 // AnalysisRun routes (Phase 3D)
 router.use("/projects/:projectId/analysis-runs", projectAnalysisRunsRouter);
