@@ -15,6 +15,8 @@ interface AppConfig {
   mongodbUri: string;
   clientUrl: string;
   nodeEnv: string;
+  geminiApiKey?: string;
+  geminiModel: string;
 }
 
 function requireEnv(name: string): string {
@@ -39,4 +41,6 @@ export const config: AppConfig = {
   mongodbUri: requireEnv("MONGODB_URI"),
   clientUrl: process.env.CLIENT_URL ?? "http://localhost:5173",
   nodeEnv: process.env.NODE_ENV ?? "development",
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
 };

@@ -435,15 +435,9 @@ architectural changes at a time.
 
 ## Immediate Next Action
 
-Phase 5 is complete. The next planned area is Phase 6, Gemini
-integration. Before making further changes: 1. read `PROJECT_CONTEXT.md`
-and this handoff 2. inspect Git status and the existing frontend/backend
-structure 3. confirm the approved Phase 6 scope 4. implement only that
-scope 5. run the smallest relevant verification commands 6. report
-changed files, behavior, tests, and unresolved issues.
-
-Do not jump directly to Gemini or redesign the backend architecture
-without explicit project-lead authorization.
+Phase 6B backend Gemini orchestration is implemented. The next work must
+remain outside this phase unless explicitly authorized: frontend AI UI,
+Project Truth, conflict/change dashboards, and broader automated testing.
 
 ## Phase 6A — AI Analysis Contract: COMPLETE
 
@@ -487,3 +481,19 @@ server-side adapter, validate the strict output, persist validated
 Insights, and update the AnalysisRun lifecycle. Preserve the existing
 four-collection schema and routes unless a later phase explicitly
 authorizes a change.
+
+Phase 6B implementation notes:
+
+- SDK: Google's official `@google/genai` package.
+- Configuration: `GEMINI_API_KEY` is required only when executing an
+  analysis; `GEMINI_MODEL` is optional and defaults to
+  `gemini-2.5-flash`.
+- Execution endpoint: `POST /api/analysis-runs/:id/execute`.
+- Lifecycle: `pending → processing → completed`, or
+  `pending/processing → failed`.
+- Boundary: Gemini returns candidates only. The backend validates JSON,
+  type/status combinations, source communication ownership, optional
+  fields, conflicts, and dependencies before using the existing Insight
+  model.
+- Verification: `npm run typecheck`, `npm run build`, and
+  `npm run verify:models` passed. No real Gemini call was performed.

@@ -4,6 +4,7 @@ import { AnalysisRun } from "../models/AnalysisRun";
 import { Communication } from "../models/Communication";
 import { Project } from "../models/Project";
 import { AppError } from "../middleware/errorHandler";
+import { executeAnalysisRun } from "../services/analysis.service";
 
 type AsyncRouteHandler = (
   req: Request,
@@ -103,5 +104,15 @@ export const getAnalysisRunById = catchAsync(async (req, res) => {
     throw new AppError(404, "AnalysisRun not found.");
   }
 
+  res.status(200).json({ success: true, data: run });
+});
+
+export const executeAnalysis = catchAsync(async (req, res) => {
+  const id = req.params.id as string;
+  if (!isValidObjectId(id)) {
+    throw new AppError(400, "Invalid analysisRun id.");
+  }
+
+  const run = await executeAnalysisRun(id);
   res.status(200).json({ success: true, data: run });
 });
