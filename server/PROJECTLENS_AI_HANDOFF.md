@@ -444,3 +444,46 @@ changed files, behavior, tests, and unresolved issues.
 
 Do not jump directly to Gemini or redesign the backend architecture
 without explicit project-lead authorization.
+
+## Phase 6A — AI Analysis Contract: COMPLETE
+
+Phase 6A is documentation-only. The exact future Gemini boundary is
+recorded in `PROJECT_CONTEXT.md` Section 15A. No Gemini SDK, API key,
+endpoint, schema, frontend behavior, AnalysisRun execution, or
+AI-created Insight was added.
+
+The contract is:
+
+- Input is an ordered envelope of the selected communications, including
+  `id`, `source`, `sender`, `date`, and `content`. All records must belong
+  to the AnalysisRun's project.
+- Output is strict JSON shaped as `{ "insights": [...] }`. Candidates
+  use the existing Insight fields: required `type`, `title`,
+  `description`, `status`, and non-empty `sourceCommunicationIds`;
+  optional `rationale`, `severity`, `assignee`, `dueDate`, and
+  `dependsOnInsightIds`.
+- The only accepted types are `decision`, `task`, `change`, `risk`, and
+  `conflict`. Existing type-specific status values and severity values
+  remain authoritative.
+- Every source ID must be valid, selected for the run, and owned by the
+  same project. The backend supplies `projectId` and `analysisRunId`;
+  Gemini cannot create cross-project references.
+- Ambiguous or unsupported claims produce no candidate rather than
+  fabricated facts. Gemini is never the source of truth.
+- The backend parses and validates the complete response, rejects
+  malformed JSON, invalid fields/enums/dates, missing or unknown source
+  IDs, cross-project references, invalid dependencies, and duplicate
+  candidates before persistence.
+- The existing AnalysisRun lifecycle remains `pending` → `processing` →
+  `completed`/`failed`. Provider, timeout, malformed-output, validation,
+  and persistence failures are failed runs, never successful partial
+  runs.
+
+### Phase 6B handoff
+
+Implement only the backend orchestration described in the contract:
+consume a pending run, build the input envelope, call Gemini through a
+server-side adapter, validate the strict output, persist validated
+Insights, and update the AnalysisRun lifecycle. Preserve the existing
+four-collection schema and routes unless a later phase explicitly
+authorizes a change.

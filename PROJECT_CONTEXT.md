@@ -423,6 +423,227 @@ PHASE 14 — Final submission
 
 ---
 
+## 15A. PHASE 6A — AI ANALYSIS CONTRACT
+
+**Status: DOCUMENTED — no Gemini integration is implemented.**
+
+Phase 6A defines the boundary between the future AI adapter and the
+existing ProjectLens backend. It does not add an endpoint, change a
+schema, execute an `AnalysisRun`, call Gemini, or create `Insight`
+documents.
+
+### 15A.1 Analysis input
+
+The backend will build one ordered input envelope from the selected
+communications referenced by `AnalysisRun.communicationIds`. Every
+communication in the envelope must belong to the `AnalysisRun.projectId`.
+The Gemini payload contains only the fields needed to interpret and trace
+the source:
+
+```json
+{
+  "communications": [
+    {
+      "id": "communication-object-id-1",
+      "source": "whatsapp",
+      "sender": "Client",
+      "date": "2026-09-10T09:00:00.000Z",
+      "content": "Use the previous marble specification."
+    },
+    {
+      "id": "communication-object-id-2",
+      "source": "supplier",
+      "sender": "Supplier",
+      "date": "2026-09-10T11:30:00.000Z",
+      "content": "Shade 312 from the previous specification is unavailable. We can provide shade 314 instead."
+    }
+  ]
+}
+```
+
+The backend retains `projectId` and `analysisRunId` as server-side
+context; neither is an AI-controlled output field. For each
+communication, `id`, `source`, `sender`, `date`, and `content` are
+required. The communication `metadata` field is not part of the contract
+by default; future work may explicitly define a safe, necessary subset.
+The backend must preserve the selected set and its IDs exactly, because
+the IDs are the only source references the AI is permitted to emit.
+
+Multiple communications are sent together so the AI can relate chronology,
+responses, contradictions, approvals, and dependencies. The AI must not
+infer facts from communications outside this envelope.
+
+### 15A.2 Candidate output
+
+Gemini must return valid JSON with exactly one top-level object:
+
+```json
+{
+  "insights": [
+    {
+      "type": "task",
+      "title": "Obtain approval for replacement marble shade",
+      "description": "Confirm whether shade 314 may replace unavailable shade 312 before procurement.",
+      "rationale": "The supplier reports shade 312 is unavailable and offers shade 314.",
+      "status": "open",
+      "severity": "high",
+      "assignee": "Project team",
+      "dueDate": "2026-09-14T00:00:00.000Z",
+      "sourceCommunicationIds": [
+        "communication-object-id-1",
+        "communication-object-id-2"
+      ],
+      "dependsOnInsightIds": []
+    }
+  ]
+}
+```
+
+The `insights` array is required and may be empty when there is not enough
+evidence for a reliable candidate. Each candidate has these **required**
+fields:
+
+- `type`: exactly `decision`, `task`, `change`, `risk`, or `conflict`.
+- `title`: non-empty string.
+- `description`: non-empty string describing only supported project
+  information.
+- `status`: a status valid for the selected `type`.
+- `sourceCommunicationIds`: a non-empty array of communication ID
+  strings.
+
+These fields are **optional**:
+
+- `rationale`: concise evidence-based explanation; it is not hidden
+  chain-of-thought.
+- `severity`: exactly `low`, `medium`, or `high`.
+- `assignee`: non-empty person/team string only when supported by the
+  communications.
+- `dueDate`: an ISO-8601 date string only when supported by the
+  communications; the backend converts it to a `Date`.
+- `dependsOnInsightIds`: an array of existing Insight ID strings when a
+  dependency on already persisted same-project Insights is supported.
+  The AI must not invent IDs. An empty array is acceptable.
+
+The names intentionally match the existing `Insight` model, including
+`dependsOnInsightIds` (not a new `dependentInsightIds` field). The backend,
+not Gemini, supplies `projectId` and `analysisRunId` when a candidate is
+persisted.
+
+The type-specific status contract is:
+
+| Type | Allowed statuses |
+| --- | --- |
+| `decision` | `proposed`, `confirmed`, `rejected` |
+| `task` | `open`, `in_progress`, `completed` |
+| `change` | `recorded` |
+| `risk` | `open`, `mitigated` |
+| `conflict` | `open`, `resolved` |
+
+AI-proposed statuses are suggestions only. The backend rejects any
+candidate whose status is not allowed for its type. A conflict should
+normally cite at least two communications when the evidence is
+contradictory, consistent with the project traceability rules.
+
+### 15A.3 Source traceability and project boundary
+
+Every candidate must include at least one `sourceCommunicationIds` value.
+Every value must:
+
+1. be a valid communication ID;
+2. occur in the exact `AnalysisRun.communicationIds` input set; and
+3. resolve to a Communication whose `projectId` equals the
+   `AnalysisRun.projectId`.
+
+The backend rejects missing arrays, empty arrays, malformed IDs, unknown
+IDs, IDs not selected for the run, and IDs belonging to another project.
+It also rejects an `AnalysisRun` whose selected communications are
+missing, mixed-project, or otherwise inconsistent before calling Gemini.
+All persisted Insights receive the same `projectId` as the AnalysisRun.
+`analysisRunId` is always the actual run being processed. The AI cannot
+select or override either ownership field, and `dependsOnInsightIds` must
+resolve only to existing Insights in that same project.
+
+### 15A.4 AI and backend responsibilities
+
+Gemini is responsible only for understanding the supplied communications,
+identifying possible decisions, tasks, changes, risks, or conflicts,
+providing concise evidence-based rationale where useful, and returning
+supporting communication IDs.
+
+The backend is authoritative. It is responsible for loading the selected
+records, enforcing project ownership, parsing and validating JSON,
+validating required fields and enums, validating type/status combinations,
+validating dates and optional values, validating source traceability and
+dependencies, rejecting duplicates or unsupported values, and deciding
+whether any candidate may be persisted. The LLM never writes to MongoDB
+and is never treated as Project Truth.
+
+### 15A.5 Ambiguity and fabrication
+
+When the communications do not provide enough evidence, Gemini should
+omit the candidate and return no insight for that claim. It must not
+fabricate dates, people, approvals, decisions, risks, responsibilities,
+material changes, or dependencies. Uncertainty is not evidence: a
+candidate with unsupported assertions must be rejected or discarded by
+the backend rather than upgraded into an Insight.
+
+### 15A.6 Output validation strategy
+
+The future implementation should validate in this order:
+
+1. Parse the provider response as JSON; reject empty, malformed, or
+   unexpected top-level shapes.
+2. Validate each candidate against a strict allow-list schema and reject
+   missing required fields, wrong JSON types, unknown fields if strict
+   mode is enabled, invalid enums, invalid dates, blank strings, and
+   unsupported optional values.
+3. Validate source IDs against the run input set and database project
+   ownership.
+4. Validate dependency IDs against existing same-project Insights and
+   prevent self-reference.
+5. Normalize strings and IDs, then reject duplicate candidates within the
+   response (same type plus normalized title and source set) and any
+   duplicate that conflicts with an already persisted result for the same
+   run.
+6. Only after all candidates pass validation may application logic create
+   Insights and update `AnalysisRun.insightIds`.
+
+Validation failure is a failed run, not a successful run with
+partially-trusted output. Mongoose validation and the existing Insight
+API rules remain a final persistence guard.
+
+### 15A.7 AnalysisRun lifecycle and failures
+
+The existing lifecycle remains the only lifecycle:
+`pending` → `processing` → `completed` or `failed`.
+
+- Creation stores `pending` and does not call Gemini.
+- Processing claims the run and changes it to `processing`.
+- A valid response, including an empty `insights` array, followed by
+  successful persistence changes it to `completed`, records persisted
+  Insight IDs, and sets `completedAt`.
+- A Gemini error, timeout, malformed response, validation failure, or
+  persistence failure changes it to `failed` and records a useful
+  `errorMessage`; it must not be reported as completed.
+
+Persistence should be all-or-nothing for a run. The future implementation
+should use a MongoDB transaction where available, or an equivalent
+rollback/cleanup strategy, so a database failure cannot leave an
+AnalysisRun pointing at an incomplete set of Insights. Retrying a failed
+run must be an explicit future policy and must not silently duplicate
+Insights.
+
+### 15A.8 Phase boundary
+
+Phase 6A is documentation only. Phase 6B should implement the smallest
+backend orchestration that consumes a pending AnalysisRun, constructs this
+input envelope, calls Gemini through a server-side adapter, validates the
+strict candidate response, persists only validated Insights, and updates
+the AnalysisRun lifecycle without changing the four-collection schema or
+adding cross-project behavior.
+
+---
+
 ## 16. DEADLINE STRATEGY
 
 **Hard target: 12 September 2026, midnight IST.**
