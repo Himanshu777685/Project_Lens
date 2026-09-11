@@ -606,9 +606,9 @@ Verification:
   and Insight API are implemented (Phases 3A–3E).
 - The Phase 4 frontend foundation is implemented in `client/`.
 - The Phase 5 Communication Inbox is implemented and runtime-verified.
-- The next planned area is Phase 6 Gemini integration.
-- Gemini integration, automated API testing, deployment, and final
-  documentation remain incomplete.
+- Phase 6B Gemini backend orchestration is implemented; frontend AI UI,
+  automated API testing, deployment, and final documentation remain
+  incomplete.
 - Any new agent must inspect the actual repository and confirm the
   current Git status before changing code.
 
@@ -679,6 +679,43 @@ Completeness patch:
 - Runtime verification confirmed a project could be created through the
   UI, opened into the Communication Inbox, and persisted after refresh.
 
----
+  ### Phase 6B — Gemini Backend Orchestration
+
+  **Status: IMPLEMENTED**
+
+  The backend now executes an existing pending AnalysisRun through the
+  approved pipeline:
+
+  `AnalysisRun → Communications → Gemini → validated candidates → Insights`
+
+  Implementation details:
+
+  - Uses Google's official `@google/genai` SDK and the `GEMINI_API_KEY`
+    environment variable. `GEMINI_MODEL` is optional and defaults to
+    `gemini-2.5-flash`.
+  - Adds `POST /api/analysis-runs/:id/execute`.
+  - Claims a pending run atomically, transitions it to `processing`, loads
+    the referenced communications in the stored order, and verifies every
+    communication belongs to the run's project.
+  - Sends Gemini only the contract fields `id`, `source`, `sender`, `date`,
+    and `content`.
+  - Parses strict JSON and validates the top-level response, insight type,
+    type-specific status, required text fields, source IDs, conflict
+    evidence, optional fields, and dependency references before persistence.
+  - Persists Insights through the existing Mongoose model using the
+    server-side project and AnalysisRun IDs. Duplicate candidates in one
+    response are ignored.
+  - Successful runs transition to `completed` and store `insightIds`;
+    failures transition to `failed` with a useful `errorMessage`.
+
+  Verification:
+
+  - `npm run typecheck` passed.
+  - `npm run build` passed.
+  - `npm run verify:models` passed: 21 checks passed, 0 failed.
+  - No real Gemini runtime call was performed because runtime API-key
+    configuration was not verified.
+
+  ---
 
 *End of PROJECT_CONTEXT.md*
