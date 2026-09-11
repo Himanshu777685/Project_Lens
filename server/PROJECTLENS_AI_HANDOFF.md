@@ -95,8 +95,9 @@ server/ ├── config/ │ ├── env.ts │ └── db.ts ├── con
 middleware/ │ ├── notFound.ts │ └── errorHandler.ts ├── models/ │ ├──
 Project.ts │ ├── Communication.ts │ ├── AnalysisRun.ts │ └── Insight.ts
 ├── routes/ │ ├── health.routes.ts │ ├── project.routes.ts │ ├──
-communication.routes.ts │ └── index.ts ├── scripts/ ├── app.ts ├──
-server.ts ├── .env ├── .env.example ├── package.json └── tsconfig.json
+communication.routes.ts │ ├── analysis.routes.ts │ ├── insight.routes.ts
+│ └── index.ts ├── scripts/ ├── app.ts ├── server.ts ├── .env ├──
+.env.example ├── package.json └── tsconfig.json
 
 ## Phase Status --- Wide View
 
@@ -107,9 +108,11 @@ Backend API: CURRENT - 3A Backend Foundation: COMPLETE - 3B Project API:
 COMPLETE and locally tested - 3C Communication API: IMPLEMENTED;
 typecheck issue was fixed; local verification should be considered
 complete only after the user's final local/Postman confirmation - 3D
-AnalysisRun API: NEXT / CURRENT IMPLEMENTATION TARGET - 3E: not started
-PHASE 4 --- Frontend Foundation: NOT STARTED PHASE 5 --- Communication
-Inbox: NOT STARTED PHASE 6 --- Gemini Integration: NOT STARTED PHASE 7
+AnalysisRun API: COMPLETE and typechecked; live HTTP/Postman verification
+confirmed by the project owner - 3E Insight API: COMPLETE; typecheck,
+build, and model verification passed
+PHASE 4 --- Frontend Foundation: COMPLETE PHASE 5 --- Communication
+Inbox: COMPLETE PHASE 6 --- Gemini Integration: NOT STARTED PHASE 7
 --- Project Intelligence: NOT STARTED PHASE 8 --- Conflict + Change
 Detection: NOT STARTED PHASE 9 --- Source Traceability: NOT STARTED
 PHASE 10 --- UI/UX Polish: NOT STARTED PHASE 11 --- Testing: NOT STARTED
@@ -179,9 +182,10 @@ string;
 
 Do not change models just to solve that issue.
 
-## Phase 3D --- CURRENT NEXT TASK
+## Phase 3D --- AnalysisRun API: COMPLETE
 
-Implement AnalysisRun API only.
+The AnalysisRun API was implemented without changing the existing
+Project, Communication, AnalysisRun, or Insight models.
 
 Required endpoints: POST /api/projects/:projectId/analysis-runs GET
 /api/projects/:projectId/analysis-runs GET /api/analysis-runs/:id
@@ -205,11 +209,192 @@ Preferred implementation: - controller - route(s) - minimal route
 registration - existing AppError/error middleware - no repository
 layer - no unnecessary service abstraction
 
+Implementation files:
+
+- `server/controllers/analysis.controller.ts`
+- `server/routes/analysis.routes.ts`
+- `server/routes/index.ts`
+
+Implemented behavior:
+
+- `POST /api/projects/:projectId/analysis-runs` validates the parent
+  project, validates and resolves every communication ID, enforces
+  project ownership, and creates the run with `status: "pending"`.
+- Any client-supplied `status` is ignored.
+- `GET /api/projects/:projectId/analysis-runs` validates the project and
+  returns its runs sorted newest first by `startedAt`.
+- `GET /api/analysis-runs/:id` validates the run ID and returns the
+  matching AnalysisRun.
+- All errors use the existing `AppError` and centralized error handler.
+- No Gemini call is made and no Insight is created in Phase 3D.
+- No repository or service abstraction was added.
+
 Required negative tests: - invalid projectId - nonexistent project -
 missing communicationIds - empty communicationIds - invalid
 communicationId - nonexistent communication - communication from another
 project - invalid analysisRun id - nonexistent analysisRun - client
 sends status=completed but stored status remains pending
+
+Verification completed:
+
+- `npm run typecheck` passed.
+- `npm run verify:models` passed: 21 checks passed, 0 failed.
+- The project owner completed the remaining local server/Postman
+  verification successfully.
+
+Phase 3D handoff notes:
+
+- Do not move Gemini orchestration into the AnalysisRun controller.
+- Future AI work should consume AnalysisRuns whose status starts as
+  `pending`; processing/completion behavior belongs to later work.
+- Preserve `communicationIds` as the source set for future analysis and
+  preserve source traceability through the existing model relationships.
+- Before making further changes, read `PROJECT_CONTEXT.md`, inspect the
+  actual repository state, and check Git status.
+
+## Phase 3E — Insight API: COMPLETE
+
+The Insight API was implemented using the existing unified `Insight`
+Mongoose model. No model, repository, service, authentication, pagination,
+filtering, or Gemini changes were introduced.
+
+Implementation files:
+
+- `server/controllers/insight.controller.ts`
+- `server/routes/insight.routes.ts`
+- `server/routes/index.ts`
+
+Endpoints:
+
+- `POST /api/projects/:projectId/insights`
+- `GET /api/projects/:projectId/insights`
+- `GET /api/insights/:id`
+
+Creation validation:
+
+- `projectId` is read only from `req.params.projectId`.
+- The parent Project must exist.
+- `analysisRunId` must be valid, exist, and belong to the Project.
+- `sourceCommunicationIds` must be a non-empty array of valid IDs.
+- Every source Communication must exist and belong to the Project.
+- `type` and `status` must use the approved type-specific combinations.
+- `title` and `description` must be non-empty strings.
+- Optional rationale and assignee must be strings.
+- Optional dueDate must be a valid date.
+- Optional severity must be `low`, `medium`, or `high`.
+- Optional dependsOnInsightIds must be valid IDs whose Insights exist in
+  the same Project.
+
+The project list is restricted to the requested Project and sorted by
+`createdAt` descending. Individual lookup validates the Insight ID and
+returns 404 when not found. Errors use `AppError`, centralized error
+handling, and the established local `catchAsync` pattern.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- `npm run verify:models` passed: 21 checks passed, 0 failed.
+- Model verification continues to emit the existing non-blocking Mongoose
+  `validateSync()` deprecation warning.
+- No live server/Postman verification was performed for Phase 3E.
+
+## Phase 4 — Frontend Foundation: COMPLETE
+
+The previously empty `client/` directory now contains the minimal
+React/TypeScript/Vite frontend foundation.
+
+Implemented:
+
+- Application shell with responsive header/navigation and main content area.
+- React Router routes for `/` and `/projects/:projectId`.
+- Environment-driven API base URL using `VITE_API_BASE_URL`.
+- Centralized typed API request utility for `/api/projects`, with resource
+  types prepared for communications, AnalysisRuns, and Insights.
+- Reusable minimal loading/error status component.
+- Project entry screen that loads and displays real backend Projects.
+
+Files are under:
+
+- `client/src/components/`
+- `client/src/pages/`
+- `client/src/api.ts`
+- `client/src/types.ts`
+- `client/src/App.tsx`
+- `client/src/main.tsx`
+- `client/src/styles.css`
+
+Verification:
+
+- `npm install` completed with 0 vulnerabilities.
+- `npm run typecheck` passed in `client/`.
+- `npm run build` passed in `client/`.
+- Vite served successfully with HTTP 200.
+- Browser verification confirmed the configured frontend API URL reached
+  the running backend and rendered the real project list.
+
+Not implemented in Phase 4:
+
+- Gemini or any AI API
+- Communication Inbox
+- Project Truth
+- AI analysis workflows
+- Conflict/change/source-traceability UI
+- Authentication
+- New backend endpoints or architecture
+
+## Phase 5 — Communication Inbox: COMPLETE
+
+The frontend project workspace now provides a real Communication Inbox
+using the existing backend API. It loads the selected Project and its
+communications, displays raw source records, and supports creating new
+communications without any AI processing.
+
+Frontend implementation:
+
+- `client/src/pages/ProjectPage.tsx`
+- `client/src/components/CommunicationForm.tsx`
+- `client/src/api.ts`
+- `client/src/types.ts`
+- `client/src/styles.css`
+
+Exact endpoints used:
+
+- `GET /api/projects/:projectId`
+- `GET /api/projects/:projectId/communications`
+- `POST /api/projects/:projectId/communications`
+
+The form uses only the approved Communication source values and validates
+source, sender, date, and non-blank content before submitting. Backend
+errors are shown to the user. Loading, empty, retry, and duplicate-submit
+states are handled. Successful creation refreshes the list without a
+full browser reload and closes/resets the form.
+
+Runtime verification:
+
+- Communications loaded from the real MongoDB-backed API.
+- A real meeting communication was created through the UI.
+- The new record appeared in the inbox.
+- Browser refresh confirmed persistence.
+- No fake/mock communication data was used.
+
+Not implemented:
+
+- Gemini or any AI API
+- AI processing or Insight generation
+- Audio transcription
+- External WhatsApp/email integrations
+- New backend endpoints or models
+
+Phase 5 completeness patch:
+
+- `client/src/components/ProjectForm.tsx` exposes the existing
+  `POST /api/projects` endpoint from the Projects page.
+- The form sends only `name` and optional `description`; project status
+  remains backend-controlled.
+- Successful creation refreshes the project list without a full reload.
+- Runtime verification created a real project, opened its empty
+  Communication Inbox, and confirmed persistence after browser refresh.
 
 ## Development Rules
 
@@ -250,10 +435,12 @@ architectural changes at a time.
 
 ## Immediate Next Action
 
-Complete Phase 3D --- AnalysisRun API. After implementation: 1. user
-applies code locally 2. run typecheck 3. run build 4. run verify:models
-5. run server 6. perform Postman tests 7. user reports results 8.
-ChatGPT reviews and approves/rejects 9. update PROJECT_CONTEXT.md 10.
-then move to Phase 3E
+Phase 5 is complete. The next planned area is Phase 6, Gemini
+integration. Before making further changes: 1. read `PROJECT_CONTEXT.md`
+and this handoff 2. inspect Git status and the existing frontend/backend
+structure 3. confirm the approved Phase 6 scope 4. implement only that
+scope 5. run the smallest relevant verification commands 6. report
+changed files, behavior, tests, and unresolved issues.
 
-Do not jump directly to Gemini.
+Do not jump directly to Gemini or redesign the backend architecture
+without explicit project-lead authorization.

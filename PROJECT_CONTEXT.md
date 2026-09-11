@@ -403,8 +403,13 @@ PHASE 2  — Database                          COMPLETE
   PHASE 2A — Database architecture           COMPLETE
   PHASE 2B — Mongoose model implementation   COMPLETE (verified)
 PHASE 3  — Backend API                       CURRENT
-PHASE 4  — Frontend foundation
-PHASE 5  — Communication Inbox
+  PHASE 3A — Backend foundation               COMPLETE
+  PHASE 3B — Project API                     COMPLETE
+  PHASE 3C — Communication API               COMPLETE
+  PHASE 3D — AnalysisRun API                 COMPLETE
+  PHASE 3E — Insight API                     COMPLETE
+PHASE 4  — Frontend foundation               COMPLETE
+PHASE 5  — Communication Inbox                COMPLETE
 PHASE 6  — Gemini integration
 PHASE 7  — Project Intelligence
 PHASE 8  — Conflict + Change detection
@@ -480,14 +485,199 @@ npm run verify:models
 
 ---
 
-## 18. CURRENT PROJECT STATE
+## 18. PHASE 3 — BACKEND API IMPLEMENTATION
+
+### Phase 3A — Backend Foundation
+
+**Status: COMPLETE**
+
+Express app/server separation, environment configuration, MongoDB
+connection, JSON/CORS middleware, health endpoint, 404 handling,
+centralized error handling, and TypeScript scripts are implemented.
+
+### Phase 3B — Project API
+
+**Status: COMPLETE**
+
+Implemented endpoints:
+
+- `POST /api/projects`
+- `GET /api/projects`
+- `GET /api/projects/:id`
+- `PATCH /api/projects/:id`
+- `PATCH /api/projects/:id/archive`
+
+Project validation, controlled updates, idempotent archive behavior, and
+invalid/nonexistent ID handling are implemented.
+
+### Phase 3C — Communication API
+
+**Status: COMPLETE**
+
+Implemented endpoints:
+
+- `POST /api/projects/:projectId/communications`
+- `GET /api/projects/:projectId/communications`
+- `GET /api/communications/:id`
+
+The API validates the parent project, source enum, sender, content, and
+date. It keeps communications scoped to their project and returns
+project communications newest first.
+
+### Phase 3D — AnalysisRun API
+
+**Status: COMPLETE**
+
+Implementation files:
+
+- `server/controllers/analysis.controller.ts`
+- `server/routes/analysis.routes.ts`
+- `server/routes/index.ts`
+
+Implemented endpoints:
+
+- `POST /api/projects/:projectId/analysis-runs`
+- `GET /api/projects/:projectId/analysis-runs`
+- `GET /api/analysis-runs/:id`
+
+The create endpoint validates the project, requires a non-empty
+`communicationIds` array, validates and resolves every communication,
+enforces project ownership, and always stores new runs with
+`status: "pending"`. Client-supplied status values are ignored.
+
+Phase 3D does not call Gemini and does not create Insight documents.
+It uses the existing models, `AppError`, centralized error handling,
+and direct controller-to-model access. No new collection, repository
+layer, or unnecessary service abstraction was introduced.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run verify:models` passed with 21 checks passed and 0 failed.
+- The project owner completed local server/Postman verification.
+
+### Phase 3E — Insight API
+
+**Status: COMPLETE**
+
+Implementation files:
+
+- `server/controllers/insight.controller.ts`
+- `server/routes/insight.routes.ts`
+- `server/routes/index.ts`
+
+Implemented endpoints:
+
+- `POST /api/projects/:projectId/insights`
+- `GET /api/projects/:projectId/insights`
+- `GET /api/insights/:id`
+
+The create endpoint takes `projectId` only from the URL, verifies the
+parent Project and AnalysisRun, enforces AnalysisRun project ownership,
+and validates every source Communication and dependency Insight against
+the same Project. It enforces the approved Insight types and
+type-specific statuses, required title/description/source fields, and
+optional rationale, assignee, due date, severity, and dependency fields.
+
+The project-scoped list endpoint returns only that Project's Insights,
+sorted newest first by `createdAt`. The individual lookup validates the
+Insight ID and returns 404 when the Insight does not exist.
+
+Phase 3E uses the existing Insight model, `AppError`, centralized error
+handling, and direct controller-to-model access. It does not add Gemini
+calls, authentication, pagination, filtering, repositories, services,
+new models, or automatic status transitions.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- `npm run verify:models` passed with 21 checks passed and 0 failed.
+- The model verification script emits the existing non-blocking
+  Mongoose `validateSync()` deprecation warning.
+- No live server/Postman verification was performed for Phase 3E.
+
+## 19. CURRENT PROJECT STATE
 
 - Database architecture is **approved** (Phase 2A).
 - Mongoose model layer is **implemented** (Phase 2B).
 - Model verification is **passing** (21/21 checks, 0 failures).
-- The project is **ready to begin Phase 3A — Backend Foundation**.
+- Backend foundation, Project API, Communication API, AnalysisRun API,
+  and Insight API are implemented (Phases 3A–3E).
+- The Phase 4 frontend foundation is implemented in `client/`.
+- The Phase 5 Communication Inbox is implemented and runtime-verified.
+- The next planned area is Phase 6 Gemini integration.
+- Gemini integration, automated API testing, deployment, and final
+  documentation remain incomplete.
+- Any new agent must inspect the actual repository and confirm the
+  current Git status before changing code.
 
-Phase 3A has not been started. Implementation planning for Phase 3A will follow in a separate step, per the governance rules in Section 13 and the safety rules in Section 14.
+### Phase 4 — Frontend Foundation
+
+**Status: COMPLETE**
+
+The previously empty `client/` directory now contains a minimal
+React/TypeScript/Vite frontend foundation:
+
+- Responsive application shell with header/navigation and main content area.
+- Routing for the project list and project entry point.
+- Environment-driven API base URL via `VITE_API_BASE_URL`.
+- Centralized typed request utility for Projects and the future
+  Communications, AnalysisRuns, and Insights API surfaces.
+- Shared backend resource types for frontend use.
+- Minimal reusable loading and error status presentation.
+
+This phase does not add Gemini, Communication Inbox, Project Truth,
+AI analysis, fake insights, authentication, or new backend architecture.
+
+Verification:
+
+- `npm install` completed with 0 vulnerabilities.
+- `npm run typecheck` passed in `client/`.
+- `npm run build` passed in `client/`.
+- Vite served the application successfully with HTTP 200.
+- With a running backend and configured `VITE_API_BASE_URL`, the browser
+  loaded the real `/api/projects` response and rendered the project list.
+
+### Phase 5 — Communication Inbox
+
+**Status: COMPLETE**
+
+The project workspace now uses the existing Communication API to load
+and display real project communications and to create new records.
+
+Implemented:
+
+- Project workspace header with project name, description, status, and
+  communication count.
+- Communication list sorted by the existing backend date ordering.
+- Human-readable source, sender, date, and raw content display.
+- Add Communication form with the exact supported source values:
+  `whatsapp`, `email`, `meeting`, `site`, `supplier`, `drawing`,
+  `voice_note`, and `other`.
+- Frontend validation for source, sender, date, and non-blank content.
+- Submitting state, backend error display, retry action, empty state, and
+  refresh-after-create behavior.
+- Meeting and voice-note content are treated as user-provided text or
+  transcript content; no audio processing is performed.
+
+Runtime verification:
+
+- Real communications loaded from MongoDB through the existing API.
+- A real meeting communication was created through the UI.
+- The new communication appeared immediately in the inbox.
+- Browser reload confirmed the communication remained persisted.
+- No fake or mock communication data was used.
+
+Completeness patch:
+
+- The Projects page now exposes the existing `POST /api/projects`
+  capability through a minimal Create Project form.
+- The form uses only the supported `name` and optional `description`
+  fields, validates the required name, refreshes the list after creation,
+  and displays the new project without a browser reload.
+- Runtime verification confirmed a project could be created through the
+  UI, opened into the Communication Inbox, and persisted after refresh.
 
 ---
 
