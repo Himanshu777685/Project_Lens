@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getProject, listProjectCommunications } from "../api";
+import {
+  getProject,
+  listProjectAnalysisRuns,
+  listProjectCommunications,
+  listProjectInsights,
+} from "../api";
 import { CommunicationForm } from "../components/CommunicationForm";
+import { ProjectTruth } from "../components/ProjectTruth";
 import { StatusMessage } from "../components/StatusMessage";
-import type { Communication, Project } from "../types";
+import type { AnalysisRun, Communication, Insight, Project } from "../types";
 
 export function ProjectPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState<Project>();
   const [communications, setCommunications] = useState<Communication[]>([]);
+  const [analysisRuns, setAnalysisRuns] = useState<AnalysisRun[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -19,12 +27,16 @@ export function ProjectPage() {
     setIsLoading(true);
     setError(undefined);
     try {
-      const [projectData, communicationData] = await Promise.all([
+      const [projectData, communicationData, analysisRunData, insightData] = await Promise.all([
         getProject(projectId),
         listProjectCommunications(projectId),
+        listProjectAnalysisRuns(projectId),
+        listProjectInsights(projectId),
       ]);
       setProject(projectData);
       setCommunications(communicationData);
+      setAnalysisRuns(analysisRunData);
+      setInsights(insightData);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "Unable to load project workspace.");
     } finally {
@@ -35,6 +47,18 @@ export function ProjectPage() {
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const latestRun = analysisRuns[0];
+
+  useEffect(() => {
+    if (!latestRun || (latestRun.status !== "pending" && latestRun.status !== "processing")) {
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      void loadWorkspace();
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [latestRun, loadWorkspace]);
 
   if (!projectId) {
     return <StatusMessage title="Project not found." tone="error" />;
@@ -77,6 +101,11 @@ export function ProjectPage() {
               </button>
             )}
           </div>
+          <ProjectTruth
+            insights={insights}
+            communications={communications}
+            latestRun={latestRun}
+          />
           {isFormOpen && (
             <CommunicationForm
               projectId={projectId}

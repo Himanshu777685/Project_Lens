@@ -32,6 +32,7 @@ export interface AnalysisRun {
   communicationIds: string[];
   status: "pending" | "processing" | "completed" | "failed";
   insightIds: string[];
+  errorMessage?: string;
   startedAt: string;
   completedAt?: string;
 }
@@ -45,8 +46,13 @@ export interface Insight {
   type: InsightType;
   title: string;
   description: string;
+  rationale?: string;
   sourceCommunicationIds: string[];
+  dependsOnInsightIds?: string[];
   status: string;
+  severity?: "low" | "medium" | "high";
+  assignee?: string;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }
