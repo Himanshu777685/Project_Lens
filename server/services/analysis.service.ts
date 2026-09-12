@@ -215,7 +215,11 @@ ${JSON.stringify(communications)}`;
 
 async function markFailed(runId: Types.ObjectId, error: unknown): Promise<never> {
   const message =
-    error instanceof AppError ? error.message : "Analysis execution failed.";
+    error instanceof AppError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : "Analysis execution failed.";
   await AnalysisRun.findByIdAndUpdate(runId, {
     status: "failed",
     errorMessage: message,
