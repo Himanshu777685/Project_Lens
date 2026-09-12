@@ -77,12 +77,18 @@ export const updateProject = catchAsync(async (req, res) => {
     throw new AppError(400, "Invalid project id.");
   }
 
-  const { name, description } = req.body ?? {};
-  const updates: { name?: string; description?: string } = {};
+  const body = req.body ?? {};
+  const { name, description, status } = body;
+  const allowedFields = new Set(["name", "description", "status"]);
+  const unknownField = Object.keys(body).find((field) => !allowedFields.has(field));
+  if (unknownField) {
+    throw new AppError(400, `Field "${unknownField}" cannot be updated.`);
+  }
 
-  // PATCH semantics: only fields explicitly present in the body are
-  // touched. `status`, `createdAt`, and `updatedAt` are never read from
-  // the body, so a client cannot change them through this endpoint.
+  const updates: { name?: string; description?: string; status?: "active" | "archived" } = {};
+
+  // PATCH semantics: only fields explicitly present in the body are touched.
+  // Timestamps and ownership fields are not accepted as update fields.
   if (name !== undefined) {
     if (typeof name !== "string" || name.trim() === "") {
       throw new AppError(400, "Project name cannot be empty.");
@@ -95,6 +101,13 @@ export const updateProject = catchAsync(async (req, res) => {
       throw new AppError(400, "Project description must be a string.");
     }
     updates.description = description.trim();
+  }
+
+  if (status !== undefined) {
+    if (status !== "active" && status !== "archived") {
+      throw new AppError(400, "Project status must be active or archived.");
+    }
+    updates.status = status;
   }
 
   const project = await Project.findByIdAndUpdate(id, updates, {
@@ -116,17 +129,14 @@ export const archiveProject = catchAsync(async (req, res) => {
     throw new AppError(400, "Invalid project id.");
   }
 
-  const project = await Project.findById(id);
+  const project = await Project.findByIdAndUpdate(
+    id,
+    { status: "archived" },
+    { new: true, runValidators: true }
+  );
 
   if (!project) {
     throw new AppError(404, "Project not found.");
-  }
-
-  // Idempotent: if it's already archived, skip the write (so updatedAt
-  // doesn't change on a no-op call) and just return it as-is.
-  if (project.status !== "archived") {
-    project.status = "archived";
-    await project.save();
   }
 
   res.status(200).json({ success: true, data: project });

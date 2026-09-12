@@ -71,12 +71,18 @@ export function ProjectPage() {
               <h2>Communication inbox</h2>
               <p>{communications.length} {communications.length === 1 ? "record" : "records"}</p>
             </div>
-            {!isFormOpen && (
+            {!isFormOpen && project.status === "active" && (
               <button className="primary-button" type="button" onClick={() => setIsFormOpen(true)}>
                 Add communication
               </button>
             )}
           </div>
+          {project.status === "archived" && (
+            <StatusMessage
+              title="This project is archived."
+              detail="Historical communications remain available, but archived projects are read-only."
+            />
+          )}
           {isFormOpen && (
             <CommunicationForm
               projectId={projectId}
