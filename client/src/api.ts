@@ -72,6 +72,16 @@ export function getProject(id: string): Promise<Project> {
   return request<Project>(`/projects/${encodeURIComponent(id)}`);
 }
 
+export function updateProjectStatus(
+  id: string,
+  status: Project["status"]
+): Promise<Project> {
+  return request<Project>(`/projects/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
 export function listProjectCommunications(projectId: string): Promise<Communication[]> {
   return request<Communication[]>(
     `/projects/${encodeURIComponent(projectId)}/communications`
