@@ -1,12 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { AnalysisRun, Communication, Insight, InsightType } from "../types";
-import { SourceCommunication } from "./SourceCommunication";
 import { StatusMessage } from "./StatusMessage";
 
 interface ProjectTruthProps {
   insights: Insight[];
   communications: Communication[];
+  analysisRuns: AnalysisRun[];
   latestRun?: AnalysisRun;
+  isRunning: boolean;
+  runError?: string;
+  onRunAnalysis: () => void;
+  onViewSources: (communicationIds: string[]) => void;
 }
 
 const CATEGORY_LABELS: Record<InsightType, string> = {
@@ -28,67 +32,23 @@ function formatDate(date?: string): string | undefined {
 export function ProjectTruth({
   insights,
   communications,
+  analysisRuns,
   latestRun,
+  isRunning,
+  runError,
+  onRunAnalysis,
+  onViewSources,
 }: ProjectTruthProps) {
-  const [selectedCommunication, setSelectedCommunication] = useState<Communication>();
   const communicationsById = useMemo(
     () => new Map(communications.map((communication) => [communication._id, communication])),
     [communications]
   );
 
-  if (!latestRun) {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Structured project understanding</h2>
-          </div>
-        </div>
-        <StatusMessage
-          title="No analysis yet."
-          detail="Project communications have not been analyzed yet, so there is no structured project truth to show."
-        />
-      </section>
-    );
-  }
-
-  if (latestRun.status === "pending" || latestRun.status === "processing") {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Analysis in progress</h2>
-          </div>
-          <span className="run-status run-status--processing">{formatStatus(latestRun.status)}</span>
-        </div>
-        <StatusMessage
-          title="ProjectLens is analyzing the communication history."
-          detail="This view will show decisions, tasks, changes, risks, and conflicts when the analysis is complete."
-        />
-      </section>
-    );
-  }
-
-  if (latestRun.status === "failed") {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Analysis could not be completed</h2>
-          </div>
-          <span className="run-status run-status--failed">Failed</span>
-        </div>
-        <StatusMessage
-          title="ProjectLens could not analyze these communications."
-          detail={latestRun.errorMessage || "Try again after checking the project communication records."}
-          tone="error"
-        />
-      </section>
-    );
-  }
+  const isLatestRunActive =
+    latestRun?.status === "pending" || latestRun?.status === "processing";
+  const latestInsights = latestRun
+    ? insights.filter((insight) => insight.analysisRunId === latestRun._id)
+    : [];
 
   return (
     <section className="truth-section">
@@ -100,9 +60,62 @@ export function ProjectTruth({
             Important decisions, work, changes, risks, and conflicts extracted from project communication.
           </p>
         </div>
-        <span className="run-status run-status--completed">Analysis complete</span>
+        <button
+          className="primary-button"
+          type="button"
+          onClick={onRunAnalysis}
+          disabled={isRunning || isLatestRunActive}
+        >
+          {isRunning || isLatestRunActive ? "Analysis running..." : latestRun?.status === "failed" ? "Retry Analysis" : "Run Analysis"}
+        </button>
       </div>
-      {insights.length === 0 ? (
+      {runError && <StatusMessage title="Analysis could not be completed." detail={runError} tone="error" />}
+      {latestRun && (
+        <div className="latest-run">
+          <strong>Latest analysis</strong>
+          <span>{new Date(latestRun.startedAt).toLocaleString()}</span>
+          <span className={`run-status run-status--${latestRun.status}`}>
+            {formatStatus(latestRun.status)}
+          </span>
+        </div>
+      )}
+      {analysisRuns.length > 1 && (
+        <details className="analysis-history">
+          <summary>Analysis history ({analysisRuns.length})</summary>
+          <div className="analysis-history-list">
+            {analysisRuns.map((run) => {
+              const runInsightCount = insights.filter(
+                (insight) => insight.analysisRunId === run._id
+              ).length;
+              return (
+                <div className="analysis-history-row" key={run._id}>
+                  <span className={`history-dot history-dot--${run.status}`} aria-hidden="true" />
+                  <span>{formatStatus(run.status)}</span>
+                  <time dateTime={run.startedAt}>{new Date(run.startedAt).toLocaleString()}</time>
+                  <span>{runInsightCount} insight{runInsightCount === 1 ? "" : "s"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
+      {!latestRun ? (
+        <StatusMessage
+          title="No analysis yet."
+          detail="Project communications have not been analyzed yet, so there is no structured project truth to show."
+        />
+      ) : isLatestRunActive ? (
+        <StatusMessage
+          title="ProjectLens is analyzing the communication history."
+          detail="This view will show decisions, tasks, changes, risks, and conflicts when the analysis is complete."
+        />
+      ) : latestRun.status === "failed" ? (
+        <StatusMessage
+          title="Analysis failed."
+          detail="Run a new analysis to try again. Previous analysis results remain available."
+          tone="error"
+        />
+      ) : latestInsights.length === 0 ? (
         <StatusMessage
           title="No insights were found."
           detail="The completed analysis did not identify any structured decisions, tasks, changes, risks, or conflicts."
@@ -110,7 +123,7 @@ export function ProjectTruth({
       ) : (
         <div className="truth-grid">
           {(Object.keys(CATEGORY_LABELS) as InsightType[]).map((type) => {
-            const categoryInsights = insights.filter((insight) => insight.type === type);
+            const categoryInsights = latestInsights.filter((insight) => insight.type === type);
             if (categoryInsights.length === 0) return null;
             return (
               <section className="truth-category" key={type}>
@@ -151,25 +164,16 @@ export function ProjectTruth({
                           {insight.sourceCommunicationIds.length} communication
                           {insight.sourceCommunicationIds.length === 1 ? "" : "s"}
                         </span>
-                        <div className="source-links">
-                          {insight.sourceCommunicationIds.map((communicationId) => {
-                            const communication = communicationsById.get(communicationId);
-                            return communication ? (
-                              <button
-                                className="source-link"
-                                type="button"
-                                key={communicationId}
-                                onClick={() => setSelectedCommunication(communication)}
-                              >
-                                View source
-                              </button>
-                            ) : (
-                              <span className="source-unavailable" key={communicationId}>
-                                Source unavailable
-                              </span>
-                            );
-                          })}
-                        </div>
+                        <button
+                          className="source-link"
+                          type="button"
+                          onClick={() => onViewSources(insight.sourceCommunicationIds)}
+                          disabled={insight.sourceCommunicationIds.every(
+                            (communicationId) => !communicationsById.has(communicationId)
+                          )}
+                        >
+                          View sources
+                        </button>
                       </div>
                     </article>
                   ))}
@@ -178,12 +182,6 @@ export function ProjectTruth({
             );
           })}
         </div>
-      )}
-      {selectedCommunication && (
-        <SourceCommunication
-          communication={selectedCommunication}
-          onClose={() => setSelectedCommunication(undefined)}
-        />
       )}
     </section>
   );

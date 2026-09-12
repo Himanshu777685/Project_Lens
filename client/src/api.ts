@@ -102,6 +102,26 @@ export function listProjectAnalysisRuns(projectId: string): Promise<AnalysisRun[
   );
 }
 
+export function createAnalysisRun(
+  projectId: string,
+  communicationIds: string[]
+): Promise<AnalysisRun> {
+  return request<AnalysisRun>(
+    `/projects/${encodeURIComponent(projectId)}/analysis-runs`,
+    {
+      method: "POST",
+      body: JSON.stringify({ communicationIds }),
+    }
+  );
+}
+
+export function executeAnalysisRun(id: string): Promise<AnalysisRun> {
+  return request<AnalysisRun>(
+    `/analysis-runs/${encodeURIComponent(id)}/execute`,
+    { method: "POST" }
+  );
+}
+
 export function listProjectInsights(projectId: string): Promise<Insight[]> {
   return request<Insight[]>(
     `/projects/${encodeURIComponent(projectId)}/insights`
