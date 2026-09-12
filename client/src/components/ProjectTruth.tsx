@@ -107,8 +107,18 @@ export function ProjectTruth({
             Important decisions, work, changes, risks, and conflicts extracted from project communication.
           </p>
         </div>
-        <button className="primary-button" type="button" onClick={onRunAnalysis} disabled={isRunning || isLatestRunActive}>
-          {isRunning || isLatestRunActive ? "Analysis running..." : latestRun?.status === "failed" ? "Retry Analysis" : "Run Analysis"}
+        <button
+          className={isRunning || isLatestRunActive ? "primary-button analysis-button analysis-button--processing" : "primary-button analysis-button"}
+          type="button"
+          onClick={onRunAnalysis}
+          disabled={isRunning || isLatestRunActive}
+        >
+          <span className="analysis-button__content">
+            {(isRunning || isLatestRunActive) && <span className="analysis-button__spinner" aria-hidden="true" />}
+            <span className="analysis-button__label">
+              {isRunning || isLatestRunActive ? "Analyzing..." : latestRun?.status === "failed" ? "Retry Analysis" : latestRun?.status === "completed" ? "Analysis completed" : "Run Analysis"}
+            </span>
+          </span>
         </button>
       </div>
       {runError && <StatusMessage title="Analysis could not be completed." detail={runError} tone="error" />}
@@ -146,11 +156,15 @@ export function ProjectTruth({
         <StatusMessage title="Analysis failed." detail="Run a new analysis to try again. Previous analysis results remain available." tone="error" />
       ) : (
         <>
-          <div className="truth-summary">
-            <strong>{latestInsights.length} insight{latestInsights.length === 1 ? "" : "s"}</strong>
+          <div className="truth-summary" aria-label="Project intelligence summary">
+            <div className="truth-summary__lead">
+              <strong>{latestInsights.length}</strong>
+              <span>insight{latestInsights.length === 1 ? "" : "s"}</span>
+            </div>
             {counts.map(({ type, count }) => (
               <button className="summary-count" type="button" key={type} onClick={() => { setFilter(type); setStatusFilter("all"); }}>
-                {count} {CATEGORY_LABELS[type].toLowerCase()}
+                <span>{count}</span>
+                <span>{CATEGORY_LABELS[type]}</span>
               </button>
             ))}
           </div>

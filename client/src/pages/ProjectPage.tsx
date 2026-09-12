@@ -128,14 +128,23 @@ export function ProjectPage() {
       )}
       {!isLoading && !error && project && (
         <>
-          <div className="workspace-heading">
-            <div>
+          <header className="project-header-card">
+            <div className="project-header-copy">
               <p className="eyebrow">Project workspace</p>
-              <h1>{project.name}</h1>
-              <p className="lede">{project.description || "Project communications and source records."}</p>
+              <div className="project-header-row">
+                <div>
+                  <h1>{project.name}</h1>
+                  <p className="lede">{project.description || "Project communications and source records."}</p>
+                </div>
+                <span className={`project-status project-status--${project.status}`}>{project.status}</span>
+              </div>
+              <div className="project-header-meta" aria-label="Project overview">
+                <span>Updated {new Date(project.updatedAt).toLocaleDateString()}</span>
+                <span>{communications.length} communication{communications.length === 1 ? "" : "s"}</span>
+                <span>{insights.length} insight{insights.length === 1 ? "" : "s"}</span>
+              </div>
             </div>
-            <span className={`project-status project-status--${project.status}`}>{project.status}</span>
-          </div>
+          </header>
           <div className="inbox-toolbar">
             <div>
               <h2>Communication inbox</h2>

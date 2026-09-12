@@ -199,17 +199,113 @@ function validateCandidate(
 
 function buildPrompt(communications: CommunicationContext[]): string {
   return `You are ProjectLens's evidence-based project communication analyst.
-Return ONLY valid JSON matching this exact shape:
-{"insights":[{"type":"decision|task|change|risk|conflict","title":"string","description":"string","status":"string","sourceCommunicationIds":["communication id"],"rationale":"string","severity":"low|medium|high","assignee":"string","dueDate":"ISO date","dependsOnInsightIds":[]}]}
 
-Identify only evidence-supported decisions, actionable tasks, meaningful changes,
-risks, and conflicts. Do not fabricate or assume approvals. Do not invent people,
-dates, responsibilities, or decisions. Every insight must cite one or more
-provided communication IDs and may reference only those IDs. Use an empty array
-for dependsOnInsightIds unless a valid existing dependency is explicitly provided.
-Use the valid status for each type. Omit optional fields when unsupported.
+Your job is to analyze the provided project communications and extract only
+evidence-supported project intelligence.
 
-Communications (preserve these IDs exactly):
+Return ONLY valid JSON in this exact structure:
+
+{
+  "insights": [
+    {
+      "type": "decision|task|change|risk|conflict",
+      "title": "string",
+      "description": "string",
+      "status": "string",
+      "sourceCommunicationIds": ["communication id"],
+      "rationale": "string",
+      "severity": "low|medium|high",
+      "assignee": "string",
+      "dueDate": "ISO date",
+      "dependsOnInsightIds": []
+    }
+  ]
+}
+
+IMPORTANT STATUS RULES:
+
+The status MUST match the insight type.
+
+For decision:
+- proposed
+- confirmed
+- rejected
+
+For task:
+- open
+- in_progress
+- completed
+
+For change:
+- recorded
+
+For risk:
+- open
+- mitigated
+
+For conflict:
+- open
+- resolved
+
+NEVER use any other status.
+
+Examples:
+- A client suggestion that has not been approved -> decision with status "proposed"
+- A clearly confirmed client decision -> decision with status "confirmed"
+- A rejected proposal -> decision with status "rejected"
+- An unfinished action item -> task with status "open"
+- Work currently being performed -> task with status "in_progress"
+- A completed action -> task with status "completed"
+- A documented project revision -> change with status "recorded"
+- An unresolved project risk -> risk with status "open"
+- A risk that has been addressed -> risk with status "mitigated"
+- An unresolved contradiction -> conflict with status "open"
+- A contradiction that has been resolved -> conflict with status "resolved"
+
+EVIDENCE RULES:
+
+1. Identify only information directly supported by the communications.
+2. Do not fabricate information.
+3. Do not assume approvals.
+4. Do not invent people, dates, responsibilities, deadlines, or decisions.
+5. Every insight MUST reference at least one provided communication ID.
+6. sourceCommunicationIds MUST contain ONLY communication IDs provided in this analysis.
+7. A conflict MUST reference at least two communications.
+8. Use an empty dependsOnInsightIds array unless a dependency is explicitly supported
+   by an existing insight.
+9. Do not create dependencies between insights from the current response.
+10. Omit optional fields when the communications do not provide sufficient evidence.
+11. Use severity only when it is meaningful and supported by the communication.
+12. Use assignee only when a responsible person/team is explicitly identified.
+13. Use dueDate only when an actual deadline/date is explicitly provided.
+14. Do not convert vague language into a specific date.
+
+IMPORTANT:
+A communication saying that someone "suggested", "proposed", "asked", or
+"recommended" something does NOT automatically mean it was approved.
+
+For example:
+"Supplier proposed using marble shade 314."
+This should NOT be:
+{
+  "type": "decision",
+  "status": "confirmed"
+}
+
+It may instead represent a proposed decision or a risk depending on the
+surrounding evidence.
+
+If later communication says:
+"Client rejected shade 314 and instructed the team to continue with shade 312."
+Then the evidence supports:
+- a rejected decision regarding shade 314
+- a confirmed decision regarding shade 312
+
+Do not duplicate the same insight unless the communications contain materially
+different information.
+
+Communications (preserve these IDs EXACTLY):
+
 ${JSON.stringify(communications)}`;
 }
 
@@ -257,7 +353,8 @@ export async function executeAnalysisRun(runId: string): Promise<IAnalysisRun> {
 
     const communications = await Communication.find({
       _id: { $in: run.communicationIds },
-    }).select("_id source sender date content");
+    }).select("_id projectId source sender date content");
+    
     const communicationById = new Map(
       communications.map((communication) => [communication._id.toString(), communication])
     );
@@ -266,6 +363,20 @@ export async function executeAnalysisRun(runId: string): Promise<IAnalysisRun> {
       if (!communication) {
         throw new AppError(404, `Communication not found: ${id.toString()}.`);
       }
+      if (!communication.projectId) {
+  throw new AppError(
+    400,
+    `Communication ${communication._id.toString()} has no projectId.`
+  );
+}
+
+if (!run.projectId) {
+  throw new AppError(
+    400,
+    `AnalysisRun ${run._id.toString()} has no projectId.`
+  );
+}
+
       if (communication.projectId.toString() !== run.projectId.toString()) {
         throw new AppError(400, "AnalysisRun contains a cross-project communication.");
       }
