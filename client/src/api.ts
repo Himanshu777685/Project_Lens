@@ -1,4 +1,10 @@
-import type { Communication, CommunicationSource, Project } from "./types";
+import type {
+  AnalysisRun,
+  Communication,
+  CommunicationSource,
+  Insight,
+  Project,
+} from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -88,4 +94,20 @@ export function createCommunication(
       body: JSON.stringify(communication),
     }
   );
+}
+
+export function listProjectAnalysisRuns(projectId: string): Promise<AnalysisRun[]> {
+  return request<AnalysisRun[]>(
+    `/projects/${encodeURIComponent(projectId)}/analysis-runs`
+  );
+}
+
+export function listProjectInsights(projectId: string): Promise<Insight[]> {
+  return request<Insight[]>(
+    `/projects/${encodeURIComponent(projectId)}/insights`
+  );
+}
+
+export function getCommunication(id: string): Promise<Communication> {
+  return request<Communication>(`/communications/${encodeURIComponent(id)}`);
 }

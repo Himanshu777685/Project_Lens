@@ -84,10 +84,46 @@ input:focus, select:focus, textarea:focus { border-color: #55769d; outline: 2px 
 .source-label { background: #eef4fb; border-radius: 999px; color: #2d5988; font-size: .7rem; font-weight: 700; padding: .28rem .55rem; text-transform: capitalize; }
 .communication-card p { color: #4e5c70; line-height: 1.6; margin: 0; white-space: pre-wrap; }
 .optional-label { color: #718096; font-size: .72rem; font-weight: 400; }
+.truth-section { border-top: 1px solid #dfe6ee; margin: 2.5rem 0; padding-top: 2rem; }
+.section-heading { align-items: flex-start; display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.section-intro { color: #647186; line-height: 1.5; margin: .45rem 0 0; max-width: 700px; }
+.run-status { border-radius: 999px; font-size: .72rem; font-weight: 700; padding: .35rem .65rem; text-transform: capitalize; white-space: nowrap; }
+.run-status--completed { background: #e8f5ee; color: #17643a; }
+.run-status--processing { background: #fff5dc; color: #896514; }
+.run-status--failed { background: #fff0f0; color: #a43b3b; }
+.truth-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.truth-category { background: #f9fbfd; border: 1px solid #e1e7ef; border-radius: .7rem; padding: 1rem; }
+.category-heading { align-items: center; display: flex; justify-content: space-between; margin-bottom: .8rem; }
+.category-heading h3 { color: #25324a; margin: 0; }
+.category-heading span { background: #e8eef5; border-radius: 999px; color: #55769d; font-size: .72rem; font-weight: 700; padding: .25rem .55rem; }
+.insight-list { display: grid; gap: .75rem; }
+.insight-card { background: #fff; border: 1px solid #e1e7ef; border-radius: .55rem; padding: 1rem; }
+.insight-card-heading { align-items: flex-start; display: flex; gap: .75rem; justify-content: space-between; }
+.insight-card h4 { color: #172033; font-size: .98rem; line-height: 1.35; margin: 0; }
+.insight-card > p { color: #4e5c70; line-height: 1.5; margin: .65rem 0 0; }
+.insight-detail { font-size: .82rem; }
+.insight-detail strong { color: #34445b; }
+.insight-status { border-radius: 999px; font-size: .68rem; font-weight: 700; padding: .25rem .5rem; text-transform: capitalize; white-space: nowrap; }
+.insight-status--confirmed, .insight-status--completed, .insight-status--mitigated, .insight-status--resolved { background: #e8f5ee; color: #17643a; }
+.insight-status--open, .insight-status--proposed, .insight-status--recorded, .insight-status--in_progress { background: #eef4fb; color: #2d5988; }
+.insight-status--rejected { background: #fff0f0; color: #a43b3b; }
+.insight-source { border-top: 1px solid #edf1f5; color: #718096; display: flex; flex-wrap: wrap; font-size: .78rem; gap: .65rem; justify-content: space-between; margin-top: .85rem; padding-top: .75rem; }
+.source-links { display: flex; flex-wrap: wrap; gap: .5rem; }
+.source-link { background: transparent; border: 0; color: #2d5988; cursor: pointer; font: inherit; font-weight: 700; padding: 0; }
+.source-unavailable { color: #a43b3b; }
+.source-dialog-backdrop { align-items: center; background: rgba(23, 32, 51, .38); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 10; }
+.source-dialog { background: #fff; border-radius: .7rem; box-shadow: 0 1rem 3rem rgba(23, 32, 51, .2); max-width: 640px; padding: 1.35rem; width: 100%; }
+.source-dialog-heading { align-items: flex-start; display: flex; justify-content: space-between; gap: 1rem; }
+.source-dialog-meta { align-items: center; border-bottom: 1px solid #e1e7ef; color: #718096; display: flex; flex-wrap: wrap; font-size: .8rem; gap: .65rem; margin-top: 1.1rem; padding-bottom: .9rem; }
+.source-dialog-meta strong { color: #34445b; }
+.source-dialog-content { color: #4e5c70; line-height: 1.65; margin: 1.1rem 0 .2rem; white-space: pre-wrap; }
 
 @media (max-width: 560px) {
   .project-row { align-items: flex-start; flex-direction: column; }
   .page-heading--with-action { flex-direction: column; }
   .workspace-heading, .inbox-toolbar { align-items: flex-start; flex-direction: column; }
   .form-grid { grid-template-columns: 1fr; gap: 0; }
+  .section-heading { flex-direction: column; }
+  .truth-grid { grid-template-columns: 1fr; }
+  .insight-card-heading { flex-direction: column; }
 }
