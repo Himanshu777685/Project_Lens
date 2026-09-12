@@ -67,6 +67,8 @@ h3 { font-size: 1rem; margin: 0 0 .55rem; }
 .primary-button, .text-button { border: 0; cursor: pointer; font: inherit; font-weight: 700; }
 .primary-button { background: #193b68; border-radius: .45rem; color: white; padding: .7rem 1rem; }
 .primary-button:disabled { cursor: wait; opacity: .65; }
+.secondary-button { background: #fff; border: 1px solid #b9c7d8; border-radius: .45rem; color: #193b68; cursor: pointer; font: inherit; font-weight: 700; padding: .65rem .9rem; }
+.secondary-button:hover { background: #f5f8fc; }
 .text-button { background: transparent; color: #55769d; padding: .4rem; }
 .communication-form { background: white; border: 1px solid #d9e1eb; border-radius: .7rem; margin-bottom: 1.25rem; padding: 1.25rem; }
 .project-form { background: white; border: 1px solid #d9e1eb; border-radius: .7rem; margin-bottom: 1.25rem; max-width: 680px; padding: 1.25rem; }
@@ -93,6 +95,25 @@ input:focus, select:focus, textarea:focus { border-color: #55769d; outline: 2px 
 .run-status--failed { background: #fff0f0; color: #a43b3b; }
 .latest-run { align-items: center; color: #718096; display: flex; flex-wrap: wrap; font-size: .8rem; gap: .65rem; margin: -.35rem 0 1rem; }
 .latest-run strong { color: #34445b; }
+.analysis-history { border-bottom: 1px solid #e1e7ef; color: #526174; font-size: .8rem; margin: 0 0 1.2rem; padding: .2rem 0 1rem; }
+.analysis-history summary { color: #2d5988; cursor: pointer; font-weight: 700; }
+.analysis-history-list { display: grid; gap: .5rem; margin-top: .8rem; }
+.analysis-history-row { align-items: center; display: grid; gap: .5rem; grid-template-columns: auto auto 1fr auto; }
+.analysis-history-row time { color: #718096; }
+.history-dot { background: #8c99a8; border-radius: 50%; height: .5rem; width: .5rem; }
+.history-dot--completed { background: #2e8b57; }
+.history-dot--failed { background: #b34a4a; }
+.history-dot--processing, .history-dot--pending { background: #bd8b21; }
+.workspace-grid { align-items: start; display: grid; gap: 1.5rem; grid-template-columns: minmax(230px, .8fr) minmax(0, 2fr); }
+.communications-panel { border-right: 1px solid #dce4ed; max-height: 72vh; min-width: 0; overflow: auto; padding-right: 1.5rem; position: sticky; top: 1rem; }
+.communications-panel-heading { margin-bottom: 1rem; }
+.communications-panel-heading h2 { margin-top: .15rem; }
+.communications-panel-heading p:last-child { color: #718096; font-size: .82rem; line-height: 1.4; margin: .45rem 0 0; }
+.communications-panel-list .communication-card { padding: .9rem; }
+.communications-panel-list .communication-meta { align-items: flex-start; flex-direction: column; gap: .35rem; margin-bottom: .55rem; }
+.communication-card--highlighted { border-color: #55769d; box-shadow: 0 0 0 2px #dce8f5; }
+.communications-close { display: none; }
+.communications-toggle { display: none; margin-bottom: 1rem; }
 .truth-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .truth-category { background: #f9fbfd; border: 1px solid #e1e7ef; border-radius: .7rem; padding: 1rem; }
 .category-heading { align-items: center; display: flex; justify-content: space-between; margin-bottom: .8rem; }
@@ -128,4 +149,12 @@ input:focus, select:focus, textarea:focus { border-color: #55769d; outline: 2px 
   .section-heading { flex-direction: column; }
   .truth-grid { grid-template-columns: 1fr; }
   .insight-card-heading { flex-direction: column; }
+  .workspace-grid { display: block; }
+  .communications-toggle { display: inline-flex; }
+  .communications-panel { background: #fff; bottom: 0; box-shadow: 0 0 2rem rgba(23, 32, 51, .2); left: 0; max-height: none; opacity: 0; padding: 1.25rem; pointer-events: none; position: fixed; right: 0; top: 0; transform: translateX(-100%); transition: transform .2s ease, opacity .2s ease; z-index: 5; }
+  .communications-panel--open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+  .communications-close { display: inline-block; position: absolute; right: 1rem; top: 1rem; }
+  .communications-panel-heading { padding-right: 4rem; }
+  .analysis-history-row { grid-template-columns: auto auto 1fr; }
+  .analysis-history-row span:last-child { grid-column: 2 / -1; }
 }

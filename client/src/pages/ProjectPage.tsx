@@ -9,6 +9,7 @@ import {
   listProjectInsights,
 } from "../api";
 import { CommunicationForm } from "../components/CommunicationForm";
+import { CommunicationPanel } from "../components/CommunicationPanel";
 import { ProjectTruth } from "../components/ProjectTruth";
 import { StatusMessage } from "../components/StatusMessage";
 import type { AnalysisRun, Communication, Insight, Project } from "../types";
@@ -24,6 +25,8 @@ export function ProjectPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
   const [analysisActionError, setAnalysisActionError] = useState<string>();
+  const [highlightedCommunicationIds, setHighlightedCommunicationIds] = useState<string[]>([]);
+  const [isCommunicationsOpen, setIsCommunicationsOpen] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     if (!projectId) return;
@@ -64,28 +67,29 @@ export function ProjectPage() {
     setIsRunningAnalysis(true);
     setAnalysisActionError(undefined);
     try {
+      let run;
       try {
-        const run = await createAnalysisRun(
+        run = await createAnalysisRun(
           projectId,
           communications.map((communication) => communication._id)
         );
-        try {
-          await executeAnalysisRun(run._id);
-        } catch {
-          setAnalysisActionError("Analysis failed. Please try again.");
-          return;
-        }
       } catch {
         setAnalysisActionError("Could not start analysis.");
         return;
       }
+
       try {
-        await loadWorkspace();
+        await executeAnalysisRun(run._id);
       } catch {
-        setAnalysisActionError(
-          "Analysis completed, but the latest Project Truth could not be refreshed. Please retry."
-        );
+        setAnalysisActionError("Analysis failed. Please try again.");
+        return;
       }
+
+      await loadWorkspace();
+    } catch {
+      setAnalysisActionError(
+        "Analysis completed, but the latest Project Truth could not be refreshed. Please retry."
+      );
     } finally {
       setIsRunningAnalysis(false);
     }
@@ -142,14 +146,6 @@ export function ProjectPage() {
               </button>
             )}
           </div>
-          <ProjectTruth
-            insights={insights}
-            communications={communications}
-            latestRun={latestRun}
-            isRunning={isRunningAnalysis}
-            runError={analysisActionError}
-            onRunAnalysis={() => void runAnalysis()}
-          />
           {isFormOpen && (
             <CommunicationForm
               projectId={projectId}
@@ -160,27 +156,39 @@ export function ProjectPage() {
               onCancel={() => setIsFormOpen(false)}
             />
           )}
-          {!isFormOpen && communications.length === 0 && (
+          <button
+            className="secondary-button communications-toggle"
+            type="button"
+            onClick={() => setIsCommunicationsOpen(true)}
+          >
+            View communications
+          </button>
+          <div className="workspace-grid">
+            <CommunicationPanel
+              communications={communications}
+              highlightedIds={highlightedCommunicationIds}
+              isOpen={isCommunicationsOpen}
+              onClose={() => setIsCommunicationsOpen(false)}
+            />
+            <ProjectTruth
+              insights={insights}
+              communications={communications}
+              analysisRuns={analysisRuns}
+              latestRun={latestRun}
+              isRunning={isRunningAnalysis}
+              runError={analysisActionError}
+              onRunAnalysis={() => void runAnalysis()}
+              onViewSources={(communicationIds) => {
+                setHighlightedCommunicationIds(communicationIds);
+                setIsCommunicationsOpen(true);
+              }}
+            />
+          </div>
+          {communications.length === 0 && (
             <StatusMessage
               title="No communications yet."
               detail="Add the first raw project record to start building the communication history."
             />
-          )}
-          {communications.length > 0 && (
-            <div className="communication-list">
-              {communications.map((communication) => (
-                <article className="communication-card" key={communication._id}>
-                  <div className="communication-meta">
-                    <span className="source-label">{communication.source}</span>
-                    <time dateTime={communication.date}>
-                      {new Date(communication.date).toLocaleDateString()}
-                    </time>
-                  </div>
-                  <h3>{communication.sender}</h3>
-                  <p>{communication.content}</p>
-                </article>
-              ))}
-            </div>
           )}
         </>
       )}
