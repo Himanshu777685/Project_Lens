@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   getProject,
+  createAnalysisRun,
+  executeAnalysisRun,
   listProjectAnalysisRuns,
   listProjectCommunications,
   listProjectInsights,
@@ -20,6 +22,8 @@ export function ProjectPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
+  const [analysisActionError, setAnalysisActionError] = useState<string>();
 
   const loadWorkspace = useCallback(async () => {
     if (!projectId) return;
@@ -49,6 +53,43 @@ export function ProjectPage() {
   }, [loadWorkspace]);
 
   const latestRun = analysisRuns[0];
+
+  const runAnalysis = useCallback(async () => {
+    if (!projectId) return;
+    if (communications.length === 0) {
+      setAnalysisActionError("Add project communications before running an analysis.");
+      return;
+    }
+
+    setIsRunningAnalysis(true);
+    setAnalysisActionError(undefined);
+    try {
+      try {
+        const run = await createAnalysisRun(
+          projectId,
+          communications.map((communication) => communication._id)
+        );
+        try {
+          await executeAnalysisRun(run._id);
+        } catch {
+          setAnalysisActionError("Analysis failed. Please try again.");
+          return;
+        }
+      } catch {
+        setAnalysisActionError("Could not start analysis.");
+        return;
+      }
+      try {
+        await loadWorkspace();
+      } catch {
+        setAnalysisActionError(
+          "Analysis completed, but the latest Project Truth could not be refreshed. Please retry."
+        );
+      }
+    } finally {
+      setIsRunningAnalysis(false);
+    }
+  }, [communications, loadWorkspace, projectId]);
 
   useEffect(() => {
     if (!latestRun || (latestRun.status !== "pending" && latestRun.status !== "processing")) {
@@ -105,6 +146,9 @@ export function ProjectPage() {
             insights={insights}
             communications={communications}
             latestRun={latestRun}
+            isRunning={isRunningAnalysis}
+            runError={analysisActionError}
+            onRunAnalysis={() => void runAnalysis()}
           />
           {isFormOpen && (
             <CommunicationForm

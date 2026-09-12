@@ -91,6 +91,8 @@ input:focus, select:focus, textarea:focus { border-color: #55769d; outline: 2px 
 .run-status--completed { background: #e8f5ee; color: #17643a; }
 .run-status--processing { background: #fff5dc; color: #896514; }
 .run-status--failed { background: #fff0f0; color: #a43b3b; }
+.latest-run { align-items: center; color: #718096; display: flex; flex-wrap: wrap; font-size: .8rem; gap: .65rem; margin: -.35rem 0 1rem; }
+.latest-run strong { color: #34445b; }
 .truth-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .truth-category { background: #f9fbfd; border: 1px solid #e1e7ef; border-radius: .7rem; padding: 1rem; }
 .category-heading { align-items: center; display: flex; justify-content: space-between; margin-bottom: .8rem; }

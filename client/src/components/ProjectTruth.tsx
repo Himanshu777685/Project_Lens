@@ -7,6 +7,9 @@ interface ProjectTruthProps {
   insights: Insight[];
   communications: Communication[];
   latestRun?: AnalysisRun;
+  isRunning: boolean;
+  runError?: string;
+  onRunAnalysis: () => void;
 }
 
 const CATEGORY_LABELS: Record<InsightType, string> = {
@@ -29,6 +32,9 @@ export function ProjectTruth({
   insights,
   communications,
   latestRun,
+  isRunning,
+  runError,
+  onRunAnalysis,
 }: ProjectTruthProps) {
   const [selectedCommunication, setSelectedCommunication] = useState<Communication>();
   const communicationsById = useMemo(
@@ -36,59 +42,11 @@ export function ProjectTruth({
     [communications]
   );
 
-  if (!latestRun) {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Structured project understanding</h2>
-          </div>
-        </div>
-        <StatusMessage
-          title="No analysis yet."
-          detail="Project communications have not been analyzed yet, so there is no structured project truth to show."
-        />
-      </section>
-    );
-  }
-
-  if (latestRun.status === "pending" || latestRun.status === "processing") {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Analysis in progress</h2>
-          </div>
-          <span className="run-status run-status--processing">{formatStatus(latestRun.status)}</span>
-        </div>
-        <StatusMessage
-          title="ProjectLens is analyzing the communication history."
-          detail="This view will show decisions, tasks, changes, risks, and conflicts when the analysis is complete."
-        />
-      </section>
-    );
-  }
-
-  if (latestRun.status === "failed") {
-    return (
-      <section className="truth-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Project Truth</p>
-            <h2>Analysis could not be completed</h2>
-          </div>
-          <span className="run-status run-status--failed">Failed</span>
-        </div>
-        <StatusMessage
-          title="ProjectLens could not analyze these communications."
-          detail={latestRun.errorMessage || "Try again after checking the project communication records."}
-          tone="error"
-        />
-      </section>
-    );
-  }
+  const isLatestRunActive =
+    latestRun?.status === "pending" || latestRun?.status === "processing";
+  const latestInsights = latestRun
+    ? insights.filter((insight) => insight.analysisRunId === latestRun._id)
+    : [];
 
   return (
     <section className="truth-section">
@@ -100,9 +58,42 @@ export function ProjectTruth({
             Important decisions, work, changes, risks, and conflicts extracted from project communication.
           </p>
         </div>
-        <span className="run-status run-status--completed">Analysis complete</span>
+        <button
+          className="primary-button"
+          type="button"
+          onClick={onRunAnalysis}
+          disabled={isRunning || isLatestRunActive}
+        >
+          {isRunning || isLatestRunActive ? "Analyzing project communication..." : "Run Analysis"}
+        </button>
       </div>
-      {insights.length === 0 ? (
+      {runError && <StatusMessage title="Could not start analysis." detail={runError} tone="error" />}
+      {latestRun && (
+        <div className="latest-run">
+          <strong>Latest analysis</strong>
+          <span>{new Date(latestRun.startedAt).toLocaleString()}</span>
+          <span className={`run-status run-status--${latestRun.status}`}>
+            {formatStatus(latestRun.status)}
+          </span>
+        </div>
+      )}
+      {!latestRun ? (
+        <StatusMessage
+          title="No analysis yet."
+          detail="Project communications have not been analyzed yet, so there is no structured project truth to show."
+        />
+      ) : isLatestRunActive ? (
+        <StatusMessage
+          title="ProjectLens is analyzing the communication history."
+          detail="This view will show decisions, tasks, changes, risks, and conflicts when the analysis is complete."
+        />
+      ) : latestRun.status === "failed" ? (
+        <StatusMessage
+          title="ProjectLens could not analyze these communications."
+          detail="Try running a new analysis. Previous analysis results remain available."
+          tone="error"
+        />
+      ) : latestInsights.length === 0 ? (
         <StatusMessage
           title="No insights were found."
           detail="The completed analysis did not identify any structured decisions, tasks, changes, risks, or conflicts."
@@ -110,7 +101,7 @@ export function ProjectTruth({
       ) : (
         <div className="truth-grid">
           {(Object.keys(CATEGORY_LABELS) as InsightType[]).map((type) => {
-            const categoryInsights = insights.filter((insight) => insight.type === type);
+            const categoryInsights = latestInsights.filter((insight) => insight.type === type);
             if (categoryInsights.length === 0) return null;
             return (
               <section className="truth-category" key={type}>
