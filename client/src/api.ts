@@ -131,3 +131,10 @@ export function listProjectInsights(projectId: string): Promise<Insight[]> {
 export function getCommunication(id: string): Promise<Communication> {
   return request<Communication>(`/communications/${encodeURIComponent(id)}`);
 }
+
+export function updateInsightStatus(id: string, status: string): Promise<Insight> {
+  return request<Insight>(`/insights/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

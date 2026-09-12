@@ -238,3 +238,30 @@ export const getInsightById = catchAsync(async (req, res) => {
 
   res.status(200).json({ success: true, data: insight });
 });
+
+export const updateInsightStatus = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) {
+    throw new AppError(400, "Invalid insight id.");
+  }
+
+  const { status } = req.body ?? {};
+  if (typeof status !== "string") {
+    throw new AppError(400, "status is required.");
+  }
+
+  const insight = await Insight.findById(id);
+  if (!insight) {
+    throw new AppError(404, "Insight not found.");
+  }
+
+  const allowedStatuses = ALLOWED_STATUSES_BY_TYPE[insight.type];
+  if (!allowedStatuses.includes(status)) {
+    throw new AppError(400, `Invalid status for insight type "${insight.type}".`);
+  }
+
+  insight.status = status as InsightStatus;
+  await insight.save();
+
+  res.status(200).json({ success: true, data: insight });
+});

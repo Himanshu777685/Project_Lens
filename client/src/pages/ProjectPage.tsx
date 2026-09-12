@@ -7,6 +7,7 @@ import {
   listProjectAnalysisRuns,
   listProjectCommunications,
   listProjectInsights,
+  updateInsightStatus,
 } from "../api";
 import { CommunicationForm } from "../components/CommunicationForm";
 import { CommunicationPanel } from "../components/CommunicationPanel";
@@ -181,6 +182,14 @@ export function ProjectPage() {
               onViewSources={(communicationIds) => {
                 setHighlightedCommunicationIds(communicationIds);
                 setIsCommunicationsOpen(true);
+              }}
+              onUpdateStatus={async (insight, status) => {
+                const updatedInsight = await updateInsightStatus(insight._id, status);
+                setInsights((current) =>
+                  current.map((currentInsight) =>
+                    currentInsight._id === updatedInsight._id ? updatedInsight : currentInsight
+                  )
+                );
               }}
             />
           </div>
