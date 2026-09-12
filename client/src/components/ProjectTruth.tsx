@@ -222,7 +222,16 @@ export function ProjectTruth({
             <h3>Description</h3><p className="source-dialog-content">{selectedInsight.description}</p>
             {selectedInsight.rationale && <><h3>Rationale</h3><p className="source-dialog-content">{selectedInsight.rationale}</p></>}
             {selectedInsight.dependsOnInsightIds && selectedInsight.dependsOnInsightIds.length > 0 && <p className="insight-detail"><strong>Dependencies:</strong> {selectedInsight.dependsOnInsightIds.length}</p>}
-            <button className="source-link" type="button" onClick={() => onViewSources(selectedInsight.sourceCommunicationIds)}>View sources</button>
+            <button
+              className="source-link"
+              type="button"
+              onClick={() => {
+                setSelectedInsight(undefined);
+                onViewSources(selectedInsight.sourceCommunicationIds);
+              }}
+            >
+              View sources
+            </button>
           </section>
         </div>
       )}
