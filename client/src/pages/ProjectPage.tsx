@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   getProject,
   createAnalysisRun,
@@ -17,6 +17,7 @@ import type { AnalysisRun, Communication, Insight, Project } from "../types";
 
 export function ProjectPage() {
   const { projectId } = useParams();
+  const location = useLocation();
   const [project, setProject] = useState<Project>();
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [analysisRuns, setAnalysisRuns] = useState<AnalysisRun[]>([]);
@@ -143,6 +144,18 @@ export function ProjectPage() {
                 <span>{communications.length} communication{communications.length === 1 ? "" : "s"}</span>
                 <span>{insights.length} insight{insights.length === 1 ? "" : "s"}</span>
               </div>
+              <nav className="project-tabs" aria-label="Project sections">
+                {[
+                  { label: "Overview", path: `/projects/${projectId}` },
+                  { label: "Communications", path: `/projects/${projectId}/communications` },
+                  { label: "Analysis", path: `/projects/${projectId}/analysis` },
+                  { label: "Insights", path: `/projects/${projectId}/insights` },
+                ].map((tab) => (
+                  <Link className={location.pathname === tab.path ? "project-tab project-tab--active" : "project-tab"} key={tab.path} to={tab.path}>
+                    {tab.label}
+                  </Link>
+                ))}
+              </nav>
             </div>
           </header>
           <div className="inbox-toolbar">

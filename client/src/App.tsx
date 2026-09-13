@@ -1,24 +1,29 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute, PublicOnlyRoute } from "./auth";
 import { AppShell } from "./components/AppShell";
-import { HomePage } from "./pages/HomePage";
-import { LoginPage } from "./pages/LoginPage";
+import { PublicLayout } from "./components/PublicLayout";
+import { AuthPage } from "./pages/AuthPage";
+import { LandingPage } from "./pages/LandingPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
-import { SignupPage } from "./pages/SignupPage";
 
 export function App() {
   return (
     <Routes>
-      <Route element={<PublicOnlyRoute />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+        </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
+          <Route path="/projects/:projectId/communications" element={<ProjectPage />} />
+          <Route path="/projects/:projectId/analysis" element={<ProjectPage />} />
+          <Route path="/projects/:projectId/insights" element={<ProjectPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate replace to="/" />} />

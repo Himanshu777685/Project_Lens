@@ -4,15 +4,12 @@ import type {
   CommunicationSource,
   Insight,
   Project,
+  AuthUser,
 } from "./types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+export type { AuthUser } from "./types";
 
-export interface AuthUser {
-  _id: string;
-  name: string;
-  email: string;
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -89,6 +86,10 @@ export function loginUser(input: {
 export async function logoutUser(): Promise<void> {
   await request<undefined>("/auth/logout", { method: "POST" });
 }
+
+export const login = loginUser;
+export const register = registerUser;
+export const logout = logoutUser;
 
 export function listProjects(): Promise<Project[]> {
   return request<Project[]>("/projects");
