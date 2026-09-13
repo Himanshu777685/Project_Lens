@@ -24,7 +24,7 @@ function catchAsync(handler: AsyncRouteHandler) {
 function cookieOptions() {
   return {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite: config.nodeEnv === "production" ? "none" as const : "lax" as const,
     secure: config.nodeEnv === "production",
   };
 }
