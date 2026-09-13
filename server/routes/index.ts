@@ -4,6 +4,7 @@ import projectRoutes from "./project.routes";
 import { projectCommunicationsRouter, communicationRouter } from "./communication.routes";
 import { projectAnalysisRunsRouter, analysisRunRouter } from "./analysis.routes";
 import { projectInsightsRouter, insightRouter } from "./insight.routes";
+import authRoutes from "./auth.routes";
 
 /**
  * routes/index.ts
@@ -16,6 +17,7 @@ import { projectInsightsRouter, insightRouter } from "./insight.routes";
 
 const router = Router();
 
+router.use("/auth", authRoutes);
 router.use("/health", healthRoutes);
 router.use("/projects", projectRoutes);
 router.use("/projects/:projectId/communications", projectCommunicationsRouter);
