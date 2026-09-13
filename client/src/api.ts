@@ -8,6 +8,12 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
+export interface AuthUser {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -31,6 +37,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ...options?.headers,
     },
     ...options,
+    credentials: "include",
   });
 
   const payload = (await response.json().catch(() => null)) as
@@ -52,6 +59,35 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return payload.data;
+}
+
+export function getCurrentUser(): Promise<AuthUser> {
+  return request<{ user: AuthUser }>("/auth/me").then((data) => data.user);
+}
+
+export function registerUser(input: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<AuthUser> {
+  return request<{ user: AuthUser }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }).then((data) => data.user);
+}
+
+export function loginUser(input: {
+  email: string;
+  password: string;
+}): Promise<AuthUser> {
+  return request<{ user: AuthUser }>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }).then((data) => data.user);
+}
+
+export async function logoutUser(): Promise<void> {
+  await request<undefined>("/auth/logout", { method: "POST" });
 }
 
 export function listProjects(): Promise<Project[]> {

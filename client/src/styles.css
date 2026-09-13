@@ -36,7 +36,18 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-link { color: #526174; font-size: .9rem; font-weight: 600; }
 .nav-link.active, .back-link { color: #193b68; }
+.app-header nav { align-items: center; display: flex; gap: 1rem; }
+.nav-user { color: #647186; font-size: .82rem; }
 .app-main { margin: 0 auto; max-width: 1440px; padding: clamp(2rem, 6vw, 5rem) 1rem; }
+.auth-loading { align-items: center; color: #647186; display: flex; justify-content: center; min-height: 100vh; }
+.auth-page { align-items: center; display: flex; justify-content: center; min-height: 70vh; }
+.auth-card { background: #fff; border: 1px solid #dfe6ee; border-radius: 1rem; box-shadow: 0 18px 35px rgba(17, 24, 39, .06); max-width: 560px; padding: clamp(1.5rem, 4vw, 2.5rem); width: 100%; }
+.auth-card h1 { font-size: clamp(1.8rem, 4vw, 2.7rem); }
+.auth-form { max-width: 460px; }
+.auth-form .primary-button { width: 100%; }
+.auth-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+.auth-switch { color: #647186; font-size: .85rem; margin: 1.25rem 0 0; text-align: center; }
+.auth-switch a { color: #193b68; font-weight: 700; }
 .page-section { width: 100%; }
 .page-heading { margin-bottom: 2rem; }
 .page-heading--with-action { align-items: flex-start; display: flex; justify-content: space-between; gap: 1rem; }
