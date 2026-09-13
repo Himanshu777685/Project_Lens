@@ -15,6 +15,8 @@ interface AppConfig {
   mongodbUri: string;
   clientUrl: string;
   nodeEnv: string;
+  jwtSecret: string;
+  jwtExpiresIn: string;
   geminiApiKey?: string;
   geminiModel: string;
 }
@@ -41,6 +43,8 @@ export const config: AppConfig = {
   mongodbUri: requireEnv("MONGODB_URI"),
   clientUrl: process.env.CLIENT_URL ?? "http://localhost:5173",
   nodeEnv: process.env.NODE_ENV ?? "development",
+  jwtSecret: requireEnv("JWT_SECRET"),
+  jwtExpiresIn: requireEnv("JWT_EXPIRES_IN"),
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
 };

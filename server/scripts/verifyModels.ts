@@ -18,6 +18,7 @@ import { Project } from "../models/Project";
 import { Communication } from "../models/Communication";
 import { AnalysisRun } from "../models/AnalysisRun";
 import { Insight } from "../models/Insight";
+import { User } from "../models/User";
 
 let passed = 0;
 let failed = 0;
@@ -32,13 +33,33 @@ function check(label: string, condition: boolean): void {
   }
 }
 
-console.log("1. All four models imported successfully");
+console.log("1. All five models imported successfully");
 check("Project model is defined", !!Project);
 check("Communication model is defined", !!Communication);
 check("AnalysisRun model is defined", !!AnalysisRun);
 check("Insight model is defined", !!Insight);
+check("User model is defined", !!User);
 
-console.log("\n2. Project schema works");
+console.log("\n2. User schema works");
+{
+  const doc = new User({
+    name: "  Ada Lovelace  ",
+    email: "  ADA@example.com  ",
+    passwordHash: "hashed-password",
+  });
+  const err = doc.validateSync();
+  check("Valid user passes validation", !err);
+  check("Name is trimmed", doc.name === "Ada Lovelace");
+  check("Email is normalized to lowercase", doc.email === "ada@example.com");
+
+  const badDoc = new User({});
+  const badErr = badDoc.validateSync();
+  check("User without a name is rejected", !!badErr?.errors["name"]);
+  check("User without an email is rejected", !!badErr?.errors["email"]);
+  check("User without a password hash is rejected", !!badErr?.errors["passwordHash"]);
+}
+
+console.log("\n3. Project schema works");
 {
   const doc = new Project({ name: "Riverside Villa Renovation" });
   const err = doc.validateSync();
@@ -50,7 +71,7 @@ console.log("\n2. Project schema works");
   check("Project without a name is rejected", !!badErr?.errors["name"]);
 }
 
-console.log("\n3. Communication schema works");
+console.log("\n4. Communication schema works");
 {
   const doc = new Communication({
     projectId: new Types.ObjectId(),
@@ -73,7 +94,7 @@ console.log("\n3. Communication schema works");
   check("Invalid source enum is rejected", !!badSourceErr?.errors["source"]);
 }
 
-console.log("\n4. AnalysisRun schema works");
+console.log("\n5. AnalysisRun schema works");
 {
   const doc = new AnalysisRun({
     projectId: new Types.ObjectId(),
@@ -92,7 +113,7 @@ console.log("\n4. AnalysisRun schema works");
   check("Invalid status enum is rejected", !!badErr?.errors["status"]);
 }
 
-console.log("\n5. Insight schema works (base case)");
+console.log("\n6. Insight schema works (base case)");
 {
   const doc = new Insight({
     projectId: new Types.ObjectId(),
@@ -107,7 +128,7 @@ console.log("\n5. Insight schema works (base case)");
   check("Valid decision insight passes validation", !err);
 }
 
-console.log("\n6. Insight type/status combinations");
+console.log("\n7. Insight type/status combinations");
 {
   const validTask = new Insight({
     projectId: new Types.ObjectId(),
@@ -178,7 +199,7 @@ console.log("\n6. Insight type/status combinations");
   check("conflict/resolved is accepted", !validConflict.validateSync());
 }
 
-console.log("\n7. Source traceability enforcement");
+console.log("\n8. Source traceability enforcement");
 {
   const missingField = new Insight({
     projectId: new Types.ObjectId(),

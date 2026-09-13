@@ -20,6 +20,7 @@
     "routes/**/*.ts",
     "controllers/**/*.ts",
     "services/**/*.ts",
+    "types/**/*.ts",
     "app.ts",
     "server.ts"
   ]
