@@ -19,6 +19,25 @@ const capabilities = [
   },
 ];
 
+const sourceTypes = [
+  ["◌", "WhatsApp"],
+  ["@", "Email"],
+  ["◫", "Meetings"],
+  ["◒", "Voice notes"],
+  ["⌂", "Site updates"],
+  ["↗", "Supplier messages"],
+  ["▤", "PDFs / documents"],
+];
+
+const truthTypes = [
+  ["◆", "Decisions"],
+  ["✓", "Tasks"],
+  ["↗", "Changes"],
+  ["!", "Risks"],
+  ["≠", "Conflicts"],
+  ["⌘", "Dependencies"],
+];
+
 export function LandingPage() {
   const { user } = useAuth();
   const workspacePath = user ? "/projects" : "/signup";
@@ -64,6 +83,36 @@ export function LandingPage() {
           </div>
           <div className="floating-badge floating-badge--insight"><span>✦</span><div><strong>New insight</strong><small>Decision detected</small></div></div>
           <div className="floating-badge floating-badge--signal"><span>✓</span><div><strong>All aligned</strong><small>Just now</small></div></div>
+        </div>
+      </section>
+      <section className="workflow-section" aria-labelledby="workflow-title">
+        <div className="workflow-heading">
+          <p className="eyebrow">From noise to next steps</p>
+          <h2 id="workflow-title">One clear path from communication to <em>project truth.</em></h2>
+          <p>ProjectLens brings every fragmented source into focus, then connects each insight back to the record it came from.</p>
+        </div>
+        <div className="workflow-diagram">
+          <div className="workflow-column workflow-column--sources">
+            <div className="workflow-column-heading"><span className="workflow-icon">＋</span><span><strong>Fragmented sources</strong><small>Everything your project already contains</small></span></div>
+            <div className="workflow-source-grid">
+              {sourceTypes.map(([icon, label]) => <span className="workflow-source" key={label}><b>{icon}</b>{label}</span>)}
+            </div>
+          </div>
+          <div className="workflow-connector" aria-hidden="true"><span>↓</span><small>collect</small></div>
+          <div className="workflow-engine">
+            <span className="workflow-engine-mark">PL</span>
+            <strong>ProjectLens</strong>
+            <span>AI analysis</span>
+          </div>
+          <div className="workflow-connector" aria-hidden="true"><span>↓</span><small>structure</small></div>
+          <div className="workflow-column workflow-column--truth">
+            <div className="workflow-column-heading"><span className="workflow-icon">✦</span><span><strong>Project truth</strong><small>Structured intelligence you can act on</small></span></div>
+            <div className="workflow-truth-grid">
+              {truthTypes.map(([icon, label]) => <span className="workflow-truth" key={label}><b>{icon}</b>{label}</span>)}
+            </div>
+          </div>
+          <div className="workflow-connector workflow-connector--trace" aria-hidden="true"><span>↓</span><small>always linked to the source</small></div>
+          <div className="workflow-trace"><span>◎</span><strong>Source traceability</strong><small>See the conversation behind every insight.</small></div>
         </div>
       </section>
       <section className="trust-strip"><span>BUILT FOR THE PEOPLE BEHIND</span><strong>CONSTRUCTION</strong><strong>DESIGN</strong><strong>OPERATIONS</strong><strong>DELIVERY</strong></section>
