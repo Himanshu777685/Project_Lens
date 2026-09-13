@@ -980,20 +980,4 @@ ProjectLens aims to provide:
 
 This project is currently developed as a hackathon prototype.
 
-Add the appropriate license here if the repository is intended to be open source.
-
 ````
-
-### Before you commit this
-
-There are **3 placeholders I would replace before pushing**:
-
-```md
-<repository-url>
-````
-
-```md
-VITE_API_URL=...
-```
-
-
