@@ -4,6 +4,11 @@ import {
   listProjectCommunications,
   getCommunicationById,
 } from "../controllers/communication.controller";
+import { requireAuth } from "../middleware/auth.middleware";
+import {
+  requireCommunicationOwner,
+  requireProjectOwner,
+} from "../middleware/authorization.middleware";
 
 /**
  * routes/communication.routes.ts
@@ -20,10 +25,12 @@ import {
  */
 
 const projectCommunicationsRouter = Router({ mergeParams: true });
+projectCommunicationsRouter.use(requireAuth, requireProjectOwner("projectId"));
 projectCommunicationsRouter.post("/", createCommunication);
 projectCommunicationsRouter.get("/", listProjectCommunications);
 
 const communicationRouter = Router();
-communicationRouter.get("/:id", getCommunicationById);
+communicationRouter.use(requireAuth);
+communicationRouter.get("/:id", requireCommunicationOwner, getCommunicationById);
 
 export { projectCommunicationsRouter, communicationRouter };

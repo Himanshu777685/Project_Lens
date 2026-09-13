@@ -5,7 +5,10 @@ import {
   getProjectById,
   updateProject,
   archiveProject,
+  deleteProject,
 } from "../controllers/project.controller";
+import { requireAuth } from "../middleware/auth.middleware";
+import { requireProjectOwner } from "../middleware/authorization.middleware";
 
 /**
  * routes/project.routes.ts
@@ -15,10 +18,12 @@ import {
 
 const router = Router();
 
+router.use(requireAuth);
 router.post("/", createProject);
 router.get("/", getAllProjects);
-router.get("/:id", getProjectById);
-router.patch("/:id", updateProject);
-router.patch("/:id/archive", archiveProject);
+router.get("/:id", requireProjectOwner("id"), getProjectById);
+router.patch("/:id", requireProjectOwner("id"), updateProject);
+router.patch("/:id/archive", requireProjectOwner("id"), archiveProject);
+router.delete("/:id", requireProjectOwner("id"), deleteProject);
 
 export default router;

@@ -1,7 +1,7 @@
 /**
  * verifyModels.ts
  * ---------------
- * Verifies that all four Mongoose models load correctly and that the
+ * Verifies that all five Mongoose models load correctly and that the
  * Insight status/traceability validation rules behave as specified.
  *
  * This uses Mongoose's built-in `.validateSync()`, which runs schema
@@ -61,14 +61,17 @@ console.log("\n2. User schema works");
 
 console.log("\n3. Project schema works");
 {
-  const doc = new Project({ name: "Riverside Villa Renovation" });
+  const ownerId = new Types.ObjectId();
+  const doc = new Project({ name: "Riverside Villa Renovation", ownerId });
   const err = doc.validateSync();
   check("Valid project passes validation", !err);
   check("Default status is 'active'", doc.status === "active");
+  check("Project owner is assigned", doc.ownerId.equals(ownerId));
 
   const badDoc = new Project({});
   const badErr = badDoc.validateSync();
   check("Project without a name is rejected", !!badErr?.errors["name"]);
+  check("Project without an owner is rejected", !!badErr?.errors["ownerId"]);
 }
 
 console.log("\n4. Communication schema works");

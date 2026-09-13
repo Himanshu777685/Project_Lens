@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { isValidObjectId } from "mongoose";
 import { Project } from "../models/Project";
 import { AppError } from "../middleware/errorHandler";
+import "../types/auth";
 
 /**
  * controllers/project.controller.ts
@@ -27,6 +28,10 @@ function catchAsync(handler: AsyncRouteHandler) {
 }
 
 export const createProject = catchAsync(async (req, res) => {
+  if (!req.user) {
+    throw new AppError(401, "Authentication required.");
+  }
+
   const { name, description } = req.body ?? {};
 
   if (typeof name !== "string" || name.trim() === "") {
@@ -44,13 +49,18 @@ export const createProject = catchAsync(async (req, res) => {
     name: name.trim(),
     description: typeof description === "string" ? description.trim() : undefined,
     status: "active",
+    ownerId: req.user.userId,
   });
 
   res.status(201).json({ success: true, data: project });
 });
 
 export const getAllProjects = catchAsync(async (req, res) => {
-  const projects = await Project.find().sort({ createdAt: -1 });
+  if (!req.user) {
+    throw new AppError(401, "Authentication required.");
+  }
+
+  const projects = await Project.find({ ownerId: req.user.userId }).sort({ createdAt: -1 });
   res.status(200).json({ success: true, data: projects });
 });
 
@@ -140,4 +150,20 @@ export const archiveProject = catchAsync(async (req, res) => {
   }
 
   res.status(200).json({ success: true, data: project });
+});
+
+export const deleteProject = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    throw new AppError(400, "Invalid project id.");
+  }
+
+  const project = await Project.findByIdAndDelete(id);
+
+  if (!project) {
+    throw new AppError(404, "Project not found.");
+  }
+
+  res.status(204).send();
 });
