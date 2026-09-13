@@ -7,6 +7,13 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface AuthUser {
+  id?: string;
+  _id?: string;
+  name?: string;
+  email: string;
+}
+
 export interface Communication {
   _id: string;
   projectId: string;

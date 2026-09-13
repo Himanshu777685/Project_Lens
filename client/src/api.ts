@@ -4,6 +4,7 @@ import type {
   CommunicationSource,
   Insight,
   Project,
+  AuthUser,
 } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -30,6 +31,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...options?.headers,
     },
+    credentials: "include",
     ...options,
   });
 
@@ -52,6 +54,43 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return payload.data;
+}
+
+function extractUser(payload: AuthUser | { user: AuthUser }): AuthUser {
+  return "user" in payload ? payload.user : payload;
+}
+
+export async function getCurrentUser(): Promise<AuthUser> {
+  return extractUser(await request<AuthUser | { user: AuthUser }>("/auth/me"));
+}
+
+export async function login(credentials: {
+  email: string;
+  password: string;
+}): Promise<AuthUser> {
+  return extractUser(
+    await request<AuthUser | { user: AuthUser }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    })
+  );
+}
+
+export async function register(credentials: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<AuthUser> {
+  return extractUser(
+    await request<AuthUser | { user: AuthUser }>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    })
+  );
+}
+
+export async function logout(): Promise<void> {
+  await request<unknown>("/auth/logout", { method: "POST" });
 }
 
 export function listProjects(): Promise<Project[]> {
